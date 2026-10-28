@@ -11,10 +11,6 @@ on:
         description: Build with your persistent release signing key
         type: boolean
         default: false
-      unsigned_release:
-        description: Build a release APK for offline signing (no private key sent to CI)
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -58,10 +54,9 @@ jobs:
       - name: Build ARM64 APK
         env:
           RELEASE: ${{ inputs.release || false }}
-          UNSIGNED_RELEASE: ${{ inputs.unsigned_release || false }}
         run: |
-          variant=Debug
-          if [ "$RELEASE" = true ] || [ "$UNSIGNED_RELEASE" = true ]; then variant=Release; fi
+          # Without signing secrets this produces an unsigned release for offline signing.
+          variant=Release
           ./gradlew ":androidApp:assembleFull${variant}" -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Verify packaged architectures
         run: |
@@ -87,4 +82,5 @@ jobs:
           name: universe-test-reports-${{ github.run_number }}
           path: composeApp/build/reports/tests/
           if-no-files-found: ignore
+
 
