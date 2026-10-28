@@ -11,6 +11,10 @@ on:
         description: Build with your persistent release signing key
         type: boolean
         default: false
+      unsigned_release:
+        description: Build a release APK for offline signing (no private key sent to CI)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -50,13 +54,14 @@ jobs:
           python3 scripts/configure-universe.py
           python3 scripts/test_configure_universe.py
       - name: Test shared Android code
-        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' --tests 'com.nuvio.app.features.details.UniverseSettingsTest' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.details.RatingsSettingsTest' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
+        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' --tests 'com.nuvio.app.features.details.UniverseSettingsTest' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.details.RatingsSettingsTest' --tests 'com.nuvio.app.features.updater.VersionUtilsTest' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Build ARM64 APK
         env:
           RELEASE: ${{ inputs.release || false }}
+          UNSIGNED_RELEASE: ${{ inputs.unsigned_release || false }}
         run: |
           variant=Debug
-          if [ "$RELEASE" = true ]; then variant=Release; fi
+          if [ "$RELEASE" = true ] || [ "$UNSIGNED_RELEASE" = true ]; then variant=Release; fi
           ./gradlew ":androidApp:assembleFull${variant}" -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Verify packaged architectures
         run: |
