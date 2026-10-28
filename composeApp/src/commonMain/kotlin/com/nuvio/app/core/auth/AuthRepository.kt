@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import kotlin.uuid.ExperimentalUuidApi
@@ -130,10 +131,19 @@ object AuthRepository {
             this.email = email
             this.password = password
         }
+        acceptRemoteSignIn()
     }.onFailure { e ->
         log.e(e) { "Email sign-in failed" }
         _error.value = e.safeAuthErrorDescription()
             ?: getString(Res.string.auth_sign_in_failed)
+    }
+
+    /** Explicit sign-in must replace local guest mode, even if the session flow emitted first. */
+    internal fun acceptRemoteSignIn(session: UserSession? = SupabaseProvider.client.auth.currentSessionOrNull()) {
+        val user = session?.user ?: return
+        if (user.id.isBlank()) return
+        AuthStorage.clearAnonymousUserId()
+        _state.value = AuthState.Authenticated(userId = user.id, email = user.email, isAnonymous = false)
     }
 
     suspend fun signOut(): Result<Unit> {

@@ -236,7 +236,11 @@ val supabaseProps = Properties().apply {
     if (propsFile.exists()) propsFile.inputStream().use { load(it) }
 }
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
+val universeVersion = Properties().apply {
+    rootProject.file("universe-version.properties").inputStream().use { load(it) }
+}
 val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").orNull
+    ?: universeVersion.getProperty("versionName")
     ?: readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
     ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")

@@ -56,7 +56,9 @@ internal object VersionUtils {
     }
 
     fun parse(raw: String?): SemanticVersion? {
-        val match = versionPattern.matchEntire(normalize(raw)) ?: return null
+        // Keep the friendly fork label, but compare its version components numerically.
+        val comparable = normalize(raw).replace("-beta-NuvioUniverse-", "-beta.NuvioUniverse.")
+        val match = versionPattern.matchEntire(comparable) ?: return null
         return SemanticVersion(
             major = match.groupValues[1].toLongOrNull() ?: return null,
             minor = match.groupValues[2].toLongOrNull() ?: return null,

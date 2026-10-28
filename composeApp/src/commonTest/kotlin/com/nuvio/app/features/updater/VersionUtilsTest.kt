@@ -6,6 +6,13 @@ import kotlin.test.Test
 
 class VersionUtilsTest {
     @Test
+    fun `fork versions compare numerically and remain beta releases`() {
+        assertTrue(VersionUtils.isRemoteNewer("0.6.5-beta-NuvioUniverse-1.10.0", "0.6.5-beta-NuvioUniverse-1.9.0"))
+        assertTrue(VersionUtils.isRemoteNewer("0.6.5-beta-NuvioUniverse-10.0.0", "0.6.5-beta-NuvioUniverse-9.0.0"))
+        assertTrue(VersionUtils.isPrerelease("0.6.5-beta-NuvioUniverse-1.0.0"))
+        assertFalse(VersionUtils.isRemoteNewer("0.6.5-beta-NuvioUniverse-1.0.0", "0.6.5-beta-NuvioUniverse-1.0.0"))
+    }
+    @Test
     fun `stable release is newer than its prerelease`() {
         assertTrue(VersionUtils.isRemoteNewer("1.1.0", "1.1.0-rc.2"))
     }

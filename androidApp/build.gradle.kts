@@ -38,16 +38,16 @@ val sentryOrg = envOrLocalProperty("SENTRY_ORG")
 val sentryProject = envOrLocalProperty("SENTRY_PROJECT")
 val sentryMappingUploadEnabled = sentryAuthToken != null && sentryOrg != null && sentryProject != null
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
+val universeVersion = Properties().apply {
+    rootProject.file("universe-version.properties").inputStream().use { load(it) }
+}
 val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").orNull
+    ?: universeVersion.getProperty("versionName")
     ?: readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
     ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
     ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
-val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(':') }
-val buildsReleaseApks = requestedTaskNames.any {
-    it.startsWith("assemble", ignoreCase = true) && it.endsWith("Release", ignoreCase = true)
-}
 
 android {
     namespace = "com.nuvio.android"
@@ -66,12 +66,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.nuvio.app"
+        applicationId = "com.ikomosientertainmenthub.nuvio.universe"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = releaseAppVersionCode
         versionName = releaseAppVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     flavorDimensions += "distribution"
@@ -111,9 +112,8 @@ android {
 
     splits {
         abi {
-            isEnable = buildsReleaseApks
-            reset()
-            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            // One APK, with only arm64-v8a native libraries from defaultConfig.
+            isEnable = false
             isUniversalApk = false
         }
     }
@@ -129,7 +129,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "../composeApp/proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseKeystore != null && releaseStorePassword != null && releaseKeyAlias != null && releaseKeyPassword != null) {
+                signingConfigs.getByName("release")
+            } else null // Allow CI to build an unsigned release for offline signing.
             ndk {
                 debugSymbolLevel = "FULL"
             }
@@ -145,7 +147,7 @@ android {
 
 androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
-        variant.applicationId.set("com.nuviodebug.com")
+        variant.applicationId.set("com.ikomosientertainmenthub.nuvio.universe.debug")
     }
 }
 
