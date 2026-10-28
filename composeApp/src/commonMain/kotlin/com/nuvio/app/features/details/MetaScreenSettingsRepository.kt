@@ -51,6 +51,8 @@ data class MetaScreenSettingsUiState(
     val posterTransitionEnabled: Boolean = false,
     val showOverallRatings: Boolean = true,
     val episodeRatingsVisibility: EpisodeRatingsVisibility = EpisodeRatingsVisibility.SHOW_ALL,
+    val universeSortOrder: UniverseSortOrder = UniverseSortOrder.AiredOldest,
+    val universePosterStyle: UniversePosterStyle = UniversePosterStyle.Landscape,
 )
 
 enum class MetaScreenBackgroundMode {
@@ -137,6 +139,8 @@ private data class StoredMetaScreenSettingsPayload(
     val showOverallRatings: Boolean = true,
     @SerialName("episode_ratings_visibility")
     val episodeRatingsVisibility: String = EpisodeRatingsVisibility.SHOW_ALL.name,
+    val universeSortOrder: String = UniverseSortOrder.AiredOldest.name,
+    val universePosterStyle: String = UniversePosterStyle.Landscape.name,
 )
 
 private data class MetaScreenSectionDefinition(
@@ -217,6 +221,8 @@ object MetaScreenSettingsRepository {
     private var showOverallRatings: Boolean = true
     private var episodeRatingsVisibility: EpisodeRatingsVisibility = EpisodeRatingsVisibility.SHOW_ALL
     private var posterTransitionEnabled: Boolean = false
+    private var universeSortOrder = UniverseSortOrder.AiredOldest
+    private var universePosterStyle = UniversePosterStyle.Landscape
     private fun localizedString(resource: StringResource): String = runBlocking { getString(resource) }
 
     fun ensureLoaded() {
@@ -239,6 +245,8 @@ object MetaScreenSettingsRepository {
                 posterTransitionEnabled = parsed.posterTransitionEnabled
                 showOverallRatings = parsed.showOverallRatings
                 episodeRatingsVisibility = EpisodeRatingsVisibility.parse(parsed.episodeRatingsVisibility)
+                universeSortOrder = runCatching { UniverseSortOrder.valueOf(parsed.universeSortOrder) }.getOrDefault(UniverseSortOrder.AiredOldest)
+                universePosterStyle = runCatching { UniversePosterStyle.valueOf(parsed.universePosterStyle) }.getOrDefault(UniversePosterStyle.Landscape)
                 preferences = parsed.items.mapNotNull { item ->
                     val key = runCatching { MetaScreenSectionKey.valueOf(item.key) }.getOrNull() ?: return@mapNotNull null
                     key to item
@@ -262,6 +270,8 @@ object MetaScreenSettingsRepository {
         posterTransitionEnabled = false
         showOverallRatings = true
         episodeRatingsVisibility = EpisodeRatingsVisibility.SHOW_ALL
+        universeSortOrder = UniverseSortOrder.AiredOldest
+        universePosterStyle = UniversePosterStyle.Landscape
         _uiState.value = MetaScreenSettingsUiState()
         ensureLoaded()
     }
@@ -294,6 +304,20 @@ object MetaScreenSettingsRepository {
     fun setEpisodeCardStyle(style: MetaEpisodeCardStyle) {
         ensureLoaded()
         episodeCardStyle = style
+        publish()
+        persist()
+    }
+
+    fun setUniverseSortOrder(order: UniverseSortOrder) {
+        ensureLoaded()
+        universeSortOrder = order
+        publish()
+        persist()
+    }
+
+    fun setUniversePosterStyle(style: UniversePosterStyle) {
+        ensureLoaded()
+        universePosterStyle = style
         publish()
         persist()
     }
@@ -350,6 +374,8 @@ object MetaScreenSettingsRepository {
         posterTransitionEnabled = false
         showOverallRatings = true
         episodeRatingsVisibility = EpisodeRatingsVisibility.SHOW_ALL
+        universeSortOrder = UniverseSortOrder.AiredOldest
+        universePosterStyle = UniversePosterStyle.Landscape
         _uiState.value = MetaScreenSettingsUiState()
     }
 
@@ -404,6 +430,8 @@ object MetaScreenSettingsRepository {
         posterTransitionEnabled = false
         showOverallRatings = true
         episodeRatingsVisibility = EpisodeRatingsVisibility.SHOW_ALL
+        universeSortOrder = UniverseSortOrder.AiredOldest
+        universePosterStyle = UniversePosterStyle.Landscape
         normalizePreferences()
         publish()
         persist()
@@ -476,6 +504,8 @@ object MetaScreenSettingsRepository {
             posterTransitionEnabled = posterTransitionEnabled,
             showOverallRatings = showOverallRatings,
             episodeRatingsVisibility = episodeRatingsVisibility,
+            universeSortOrder = universeSortOrder,
+            universePosterStyle = universePosterStyle,
         )
     }
 
@@ -493,6 +523,8 @@ object MetaScreenSettingsRepository {
                     posterTransitionEnabled = posterTransitionEnabled,
                     showOverallRatings = showOverallRatings,
                     episodeRatingsVisibility = episodeRatingsVisibility.name,
+                    universeSortOrder = universeSortOrder.name,
+                    universePosterStyle = universePosterStyle.name,
                 ),
             ),
         )

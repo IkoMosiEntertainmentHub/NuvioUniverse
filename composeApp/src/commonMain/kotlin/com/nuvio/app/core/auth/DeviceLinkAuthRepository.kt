@@ -185,6 +185,7 @@ object DeviceLinkAuthRepository {
                     user = user,
                 ),
             )
+            AuthRepository.acceptRemoteSignIn()
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {

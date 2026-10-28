@@ -33,6 +33,8 @@ AGENTS.md
 PERFORMANCE_FINDINGS.md
 scripts/*
 !scripts/update-universe-upstream.ps1
+!scripts/configure-universe.py
+!scripts/test_configure_universe.py
 !scripts/sign-ios-device-app.py
 iosApp/Configuration/DeviceSigning.local.json
 

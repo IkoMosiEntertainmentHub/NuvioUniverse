@@ -130,10 +130,20 @@ object AuthRepository {
             this.email = email
             this.password = password
         }
+        acceptRemoteSignIn()
     }.onFailure { e ->
         log.e(e) { "Email sign-in failed" }
         _error.value = e.safeAuthErrorDescription()
             ?: getString(Res.string.auth_sign_in_failed)
+    }
+
+    /** Explicit sign-in must replace local guest mode, even if the session flow emitted first. */
+    internal fun acceptRemoteSignIn() {
+        val session = SupabaseProvider.client.auth.currentSessionOrNull() ?: return
+        val user = session.user ?: return
+        if (user.id.isBlank()) return
+        AuthStorage.clearAnonymousUserId()
+        _state.value = AuthState.Authenticated(userId = user.id, email = user.email, isAnonymous = false)
     }
 
     suspend fun signOut(): Result<Unit> {

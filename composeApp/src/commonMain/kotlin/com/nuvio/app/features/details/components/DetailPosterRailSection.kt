@@ -45,6 +45,8 @@ fun DetailPosterRailSection(
     horizontalScrollPadding: Dp = 0.dp,
     sourceLabel: String? = null,
     itemSubtitle: ((MetaPreview) -> String?)? = null,
+    landscapeOverride: Boolean? = null,
+    waitForBackdrop: Boolean = true,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
 ) {
@@ -66,13 +68,13 @@ fun DetailPosterRailSection(
             rowModifier = Modifier.nuvioHorizontalScrollBleed(horizontalScrollPadding),
             key = { item -> item.stableKey() },
         ) { item ->
-            val landscape = posterCardStyle.catalogLandscapeModeEnabled || item.posterShape == PosterShape.Landscape
+            val landscape = landscapeOverride ?: (posterCardStyle.catalogLandscapeModeEnabled || item.posterShape == PosterShape.Landscape)
             val localizedBackdrop = rememberDetailBackdrop(
                 item = item,
                 language = tmdbSettings.language,
                 enabled = landscape && (item.id.startsWith("tmdb:") || tmdbSettings.enabled && tmdbSettings.useArtwork),
             )
-            if (localizedBackdrop.isLoading) {
+            if (localizedBackdrop.isLoading && waitForBackdrop) {
                 SkeletonPoster(
                     modifier = Modifier.width(landscapePosterWidth(posterCardStyle.widthDp)),
                     aspectRatio = PosterLandscapeAspectRatio,
@@ -88,6 +90,7 @@ fun DetailPosterRailSection(
                     HomePosterCard(
                         item = cardItem,
                         useLandscapeBackdropMode = landscape,
+                        landscapeOverride = landscapeOverride,
                         showLandscapeOverlay = false,
                         isWatched = WatchingState.isPosterWatched(
                             watchedKeys = watchedKeys,

@@ -1,5 +1,38 @@
 # Nuvio Universe (unofficial personal fork)
 
+## Feedback update
+
+The build now configures the official Nuvio account endpoint using its public
+HTTPS discovery document and anon/publishable client key. It validates the
+read-only auth-settings endpoint before producing an APK. No account password,
+private login token or service-role key is embedded. Explicit email/device-link
+sign-in now clears local guest mode after a real session has been established.
+Existing Nuvio profile, library and progress sync mechanisms remain in use.
+
+Layout > Details > Universe provides independent sorting and card-style controls:
+oldest air date first (default), newest first, most popular by IMDb vote count;
+landscape (default) or portrait posters. The existing profile settings payload
+carries these options through Nuvio's account sync. Other Nuvio versions may not
+display or preserve fork-specific controls, even though the shared account is used.
+
+Only full movie/TV-movie and series/miniseries types are shown. Known movie
+runtimes below 40 minutes and series runtimes below 10 minutes are excluded.
+Shorts, short series, episodes and specials are excluded. Unknown runtime does
+not disqualify an otherwise full-length type. Connections are limited to
+sequels/prequels and spin-offs in the same continuity; no remake, reference,
+similar-title or broad cross-franchise recommendation queries are used.
+
+Metadata fetching starts as soon as base title metadata is parsed. The first
+results appear before the bounded follow-up searches finish. Up to six direct
+connections are expanded one step, with cached child responses and request
+deduplication. Cards appear immediately using available artwork while TMDB
+backdrops load. A first uncached network request still depends on the provider;
+this is not a promise of instant or complete franchise discovery.
+
+The tests use fixtures and local SDK session imports; no real user login is
+performed by CI. Primary-account sign-in and on-device appearance still need
+confirmation by the user in the rebuilt APK.
+
 Repository: https://github.com/IkoMosiEntertainmentHub/NuvioDebrifyMobile
 
 Based on NuvioMedia/NuvioMobile's current `cmp-rewrite` branch. Initial base:

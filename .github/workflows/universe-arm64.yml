@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: universe-arm64-${{ github.ref }}
+  group: universe-arm64-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -37,6 +37,9 @@ jobs:
       - name: Configure optional metadata and release signing
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          NUVIO_SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
+          NUVIO_SUPABASE_ANON_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
+          NUVIO_SUPABASE_FALLBACK_URL: ${{ secrets.NUVIO_SUPABASE_FALLBACK_URL }}
           MDBLIST_CLIENT_ID: ${{ secrets.MDBLIST_CLIENT_ID }}
           SIGNING_KEY: ${{ secrets.UNIVERSE_KEYSTORE_BASE64 }}
           SIGNING_PASSWORD: ${{ secrets.UNIVERSE_KEYSTORE_PASSWORD }}
@@ -44,26 +47,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.UNIVERSE_KEY_PASSWORD }}
           RELEASE: ${{ inputs.release || false }}
         run: |
-          python3 - <<'PY'
-          import base64, os
-          from pathlib import Path
-          props = {k: os.environ[k] for k in ('TMDB_API_KEY', 'MDBLIST_CLIENT_ID') if os.environ.get(k)}
-          if os.environ['RELEASE'] == 'true':
-              required = ('SIGNING_KEY', 'SIGNING_PASSWORD', 'SIGNING_ALIAS', 'KEY_PASSWORD')
-              if any(not os.environ.get(k) for k in required):
-                  raise SystemExit('Add the four UNIVERSE signing secrets before building a release.')
-              key = Path(os.environ['RUNNER_TEMP']) / 'universe.jks'
-              key.write_bytes(base64.b64decode(os.environ['SIGNING_KEY'], validate=True))
-              props.update(NUVIO_RELEASE_STORE_FILE=str(key),
-                           NUVIO_RELEASE_STORE_PASSWORD=os.environ['SIGNING_PASSWORD'],
-                           NUVIO_RELEASE_KEY_ALIAS=os.environ['SIGNING_ALIAS'],
-                           NUVIO_RELEASE_KEY_PASSWORD=os.environ['KEY_PASSWORD'])
-          def escape(s):
-              return s.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
-          Path('local.properties').write_text(''.join(f'{k}={escape(v)}\n' for k,v in props.items()))
-          PY
+          python3 scripts/configure-universe.py
+          python3 scripts/test_configure_universe.py
       - name: Test shared Android code
-        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
+        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' --tests 'com.nuvio.app.features.details.UniverseSettingsTest' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.details.RatingsSettingsTest' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Build ARM64 APK
         env:
           RELEASE: ${{ inputs.release || false }}

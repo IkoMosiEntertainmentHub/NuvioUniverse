@@ -3,6 +3,7 @@ package com.nuvio.app.features.details
 import com.nuvio.app.features.addons.RawHttpResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 import kotlin.test.*
@@ -107,6 +108,83 @@ class UniverseRepositoryTest {
         assertEquals(emptyList(), client.load(meta.copy(id = "mal:123")))
         assertNull(universeImdbId("ttbad"))
         assertEquals("tt123", universeImdbId("imdb:tt123:1:2"))
+    }
+
+    @Test fun `shorts brief specials and short videos are excluded`() {
+        val result = parseUniverse(payload(
+            edge("tt1", "Short", "Spin-off", "short"),
+            edge("tt2", "TV short", "Spin-off", "tvShort"),
+            edge("tt3", "Special", "Spin-off", "tvSpecial"),
+            edge("tt4", "Tiny series", "Spin-off", "tvShortSeries"),
+            edge("tt5", "Feature movie", "Followed by", "movie"),
+            edge("tt6", "Full show", "Spin-off", "tvSeries"),
+        ), meta.id)!!
+        assertEquals(listOf("tt5", "tt6"), result.map { it.item.id })
+    }
+
+    @Test fun `short runtime excludes misclassified movies and series`() {
+        fun timed(type: String, seconds: Int): JsonObject {
+            val original = edge("tt$seconds", "Title", "Spin-off", type)
+            val node = original["node"]!!.jsonObject
+            val title = node["associatedTitle"]!!.jsonObject
+            return JsonObject(original + ("node" to JsonObject(node + ("associatedTitle" to JsonObject(title +
+                ("runtime" to buildJsonObject { put("seconds", seconds) }))))))
+        }
+        val result = parseUniverse(payload(timed("movie", 420), timed("movie", 7200), timed("tvSeries", 300), timed("tvSeries", 1320)), meta.id)!!
+        assertEquals(listOf("tt7200", "tt1320"), result.map { it.item.id })
+    }
+
+    @Test fun `continuity expansion shows direct results first and warms child cache`() = runTest {
+        val ids = mutableListOf<String>()
+        val client = UniverseClient(
+            request = { body ->
+                val id = Json.parseToJsonElement(body).jsonObject["variables"]!!.jsonObject["id"]!!.jsonPrimitive.content
+                ids += id
+                response(if (id == meta.id) payload(edge("tt2", "Sequel", "Followed by", "movie"))
+                    else payload(edge("tt3", "Next sequel", "Followed by", "movie"), edge(meta.id, "Original", "Follows", "series")))
+            }, resolveImdb = { _, _ -> null }, nowMs = { 0L },
+        )
+        var first: List<UniverseConnection>? = null
+        val expanded = client.load(meta, expandConnections = true) { first = it }
+        assertEquals(listOf("tt2"), first!!.map { it.item.id })
+        assertEquals(listOf("tt2", "tt3"), expanded!!.map { it.item.id })
+        assertEquals("Same continuity", expanded.last().relations.single())
+        val requests = ids.size
+        client.load(meta.copy(id = "tt2", type = "movie"))
+        assertEquals(requests, ids.size)
+        assertFalse(UNIVERSE_QUERY.contains("remake_of"))
+        assertFalse(UNIVERSE_QUERY.contains("references"))
+    }
+
+    @Test fun `failed expansion retains direct connections`() = runTest {
+        var requests = 0
+        val client = UniverseClient(request = {
+            requests++
+            if (requests == 1) response(payload(edge("tt2", "Sequel", "Followed by", "movie"))) else response("", 503)
+        }, resolveImdb = { _, _ -> null }, nowMs = { 0L })
+        assertEquals(listOf("tt2"), client.load(meta, expandConnections = true)!!.map { it.item.id })
+    }
+
+    @Test fun `concurrent requests for one title share a network fetch`() = runTest {
+        var requests = 0
+        val client = UniverseClient(request = { requests++; delay(20); response(payload()) }, resolveImdb = { _, _ -> null }, nowMs = { 0L })
+        kotlinx.coroutines.coroutineScope {
+            val first = async { client.load(meta) }
+            val second = async { client.load(meta) }
+            first.await(); second.await()
+        }
+        assertEquals(1, requests)
+    }
+
+    @Test fun `release and popularity orders are stable and put unknown dates last`() {
+        val cards = listOf(
+            UniverseConnection(com.nuvio.app.features.home.MetaPreview("tt3", "movie", "Unknown", voteCount = 5), emptyList()),
+            UniverseConnection(com.nuvio.app.features.home.MetaPreview("tt2", "movie", "New", releaseInfo = "2020", voteCount = 30), emptyList()),
+            UniverseConnection(com.nuvio.app.features.home.MetaPreview("tt1", "movie", "Old", rawReleaseDate = "2002-05-03", voteCount = 10), emptyList()),
+        )
+        assertEquals(listOf("tt1", "tt2", "tt3"), sortUniverse(cards, UniverseSortOrder.AiredOldest).map { it.item.id })
+        assertEquals(listOf("tt2", "tt1", "tt3"), sortUniverse(cards, UniverseSortOrder.AiredNewest).map { it.item.id })
+        assertEquals(listOf("tt2", "tt1", "tt3"), sortUniverse(cards, UniverseSortOrder.MostPopular).map { it.item.id })
     }
 
     private fun response(body: String, status: Int = 200) = RawHttpResponse(status, "", "https://graphql.imdb.com/", body, emptyMap())
