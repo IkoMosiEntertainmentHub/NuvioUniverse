@@ -134,7 +134,7 @@ class UniverseRepositoryTest {
         assertEquals(listOf("tt7200", "tt1320"), result.map { it.item.id })
     }
 
-    @Test fun `continuity expansion shows direct results first and warms child cache`() = runTest {
+    @Test fun `franchise expansion shows direct results first and warms child cache`() = runTest {
         val ids = mutableListOf<String>()
         val client = UniverseClient(
             request = { body ->
@@ -148,12 +148,30 @@ class UniverseRepositoryTest {
         val expanded = client.load(meta, expandConnections = true) { first = it }
         assertEquals(listOf("tt2"), first!!.map { it.item.id })
         assertEquals(listOf("tt2", "tt3"), expanded!!.map { it.item.id })
-        assertEquals("Same continuity", expanded.last().relations.single())
+        assertEquals("Franchise connection", expanded.last().relations.single())
         val requests = ids.size
         client.load(meta.copy(id = "tt2", type = "movie"))
         assertEquals(requests, ids.size)
-        assertFalse(UNIVERSE_QUERY.contains("remake_of"))
+        assertTrue(UNIVERSE_QUERY.contains("remake_of"))
         assertFalse(UNIVERSE_QUERY.contains("references"))
+    }
+
+    @Test fun `all franchise relationship categories are requested`() {
+        listOf("follows", "followed_by", "spin_off", "spin_off_from", "remake_of", "remade_as").forEach {
+            assertTrue(UNIVERSE_QUERY.contains("\"$it\""), it)
+        }
+    }
+
+    @Test fun `remake and reboot titles retain their provider relationship labels`() {
+        val result = parseUniverse(payload(
+            edge("tt1", "Original", "Remake of", "movie"),
+            edge("tt2", "Reboot", "Remade as", "movie"),
+            edge("tt3", "Prequel", "Follows", "movie"),
+            edge("tt4", "Spin-off series", "Spin-off", "tvSeries"),
+        ), meta.id)!!
+        assertEquals(listOf("tt1", "tt2", "tt3", "tt4"), result.map { it.item.id })
+        assertEquals(listOf("Remake of"), result.first().relations)
+        assertEquals(listOf("Remade as"), result[1].relations)
     }
 
     @Test fun `failed expansion retains direct connections`() = runTest {

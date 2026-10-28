@@ -56,7 +56,8 @@ internal object UniverseRepository {
 
     fun prefetch(meta: MetaDetails, refresh: Boolean = false) {
         if (!supportsUniverse(meta.type)) return
-        if (MetaScreenSettingsRepository.uiState.value.items.any { it.key == MetaScreenSectionKey.UNIVERSE && !it.enabled }) return
+        // Do not contact the provider before the user has explicitly enabled this section.
+        if (MetaScreenSettingsRepository.uiState.value.items.none { it.key == MetaScreenSectionKey.UNIVERSE && it.enabled }) return
         scope.launch {
             val key = key(meta)
             gate.withLock {
@@ -113,7 +114,8 @@ internal class UniverseClient(
                 val direct = withTimeoutOrNull(timeoutMs) { fetchConnections(imdbId) } ?: return@withTimeoutOrNull null
                 onPartial(direct)
                 if (!expandConnections || direct.isEmpty()) return@withTimeoutOrNull direct
-                // Expand actual sequel/spin-off edges only. Never mix in recommendations or references.
+                // Expand sequel, spin-off and remake edges, including reboots tagged as remakes.
+                // Never mix in recommendations or incidental references.
                 val related = withTimeoutOrNull(timeoutMs) {
                     coroutineScope {
                         direct.take(6).map { parent ->
@@ -123,7 +125,7 @@ internal class UniverseClient(
                 }.orEmpty()
                 val known = direct.associateByTo(linkedMapOf()) { it.item.id }
                 related.filter { it.item.id != imdbId }.forEach { entry ->
-                    if (entry.item.id !in known) known[entry.item.id] = entry.copy(relations = listOf("Same continuity"))
+                    if (entry.item.id !in known) known[entry.item.id] = entry.copy(relations = listOf("Franchise connection"))
                 }
                 known.values.toList()
             }
@@ -228,7 +230,7 @@ internal val UNIVERSE_QUERY = """
     query NuvioUniverse(${ '$' }id: ID!) {
       title(id: ${ '$' }id) {
         connections(first: 50, filter: { categories: [
-          "followed_by", "follows", "spin_off", "spin_off_from"
+          "followed_by", "follows", "spin_off", "spin_off_from", "remake_of", "remade_as"
         ] }) {
           edges { node {
             category { text }
