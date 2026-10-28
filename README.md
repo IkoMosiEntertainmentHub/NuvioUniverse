@@ -30,11 +30,15 @@ Find its controls under **Settings → Layout → Details → Universe**. Univer
 
 ## Preview
 
-Owner-supplied screenshots from an earlier working debug build. They show Universe and its portrait/landscape cards; they predate the latest restoration of Collections above Universe.
+Owner-supplied screenshots from the latest personal release, provided on 28 October 2026. They show preserved Collections above Universe, landscape and portrait cards, movie/series connections, sequels and remakes.
 
-| Reacher — portrait | Jack Reacher — portrait | Reacher — landscape |
+| Jack Reacher — landscape | Jack Reacher — posters | Reacher — spin-offs |
 | --- | --- | --- |
-| <img width="250" alt="Reacher Universe in an earlier debug build" src="https://github.com/user-attachments/assets/dc1a7d8f-fee6-436d-903d-efea375d0805" /> | <img width="250" alt="Jack Reacher Universe in an earlier debug build" src="https://github.com/user-attachments/assets/a6fd907d-f64c-48a7-b791-94a80d1df3d4" /> | <img width="250" alt="Reacher Universe landscape cards in an earlier debug build" src="https://github.com/user-attachments/assets/f2cce752-d33d-449a-afce-4e702c3efe1e" /> |
+| <img width="250" alt="Jack Reacher — landscape" src="https://raw.githubusercontent.com/IkoMosiEntertainmentHub/NuvioUniverse/cmp-rewrite/docs/screenshots/latest/jack-reacher-landscape.jpg" /> | <img width="250" alt="Jack Reacher — posters" src="https://raw.githubusercontent.com/IkoMosiEntertainmentHub/NuvioUniverse/cmp-rewrite/docs/screenshots/latest/jack-reacher-posters.jpg" /> | <img width="250" alt="Reacher — spin-offs" src="https://raw.githubusercontent.com/IkoMosiEntertainmentHub/NuvioUniverse/cmp-rewrite/docs/screenshots/latest/reacher-posters.jpg" /> |
+
+| Home Alone — remake | Home Alone — sequels | Moana — remake |
+| --- | --- | --- |
+| <img width="250" alt="Home Alone — remake" src="https://raw.githubusercontent.com/IkoMosiEntertainmentHub/NuvioUniverse/cmp-rewrite/docs/screenshots/latest/home-alone-remake.jpg" /> | <img width="250" alt="Home Alone — sequels" src="https://raw.githubusercontent.com/IkoMosiEntertainmentHub/NuvioUniverse/cmp-rewrite/docs/screenshots/latest/home-alone-sequels.jpg" /> | <img width="250" alt="Moana — remake" src="https://raw.githubusercontent.com/IkoMosiEntertainmentHub/NuvioUniverse/cmp-rewrite/docs/screenshots/latest/moana-remake.jpg" /> |
 
 ## Downloads and versioning
 
@@ -72,7 +76,7 @@ GitHub's fork relationship is retained so source changes can be submitted upstre
 - [Upstream source proposal](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/actions/runs/40659773634): **27 Android host tests** and a successful original-identity Android app build.
 - Both downloaded test reports had zero failures/skips and matched GitHub's artifact checksums.
 
-The screenshots document earlier real-device use. Final combined Collections/Universe device screenshots, current account-login verification and iOS validation are still pending.
+The owner supplied latest-release device screenshots showing Collections above Universe and both card layouts. Account-login verification, physical ARMv7 playback and iOS validation remain pending.
 
 ## Build from source
 
