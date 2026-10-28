@@ -23,6 +23,7 @@ enum class MetaScreenSectionKey {
     EPISODES,
     DETAILS,
     COLLECTION,
+    UNIVERSE,
     MORE_LIKE_THIS,
     ;
 
@@ -198,6 +199,11 @@ object MetaScreenSettingsRepository {
         ),
         MetaScreenSectionDefinition(
             key = MetaScreenSectionKey.COLLECTION,
+            titleRes = Res.string.meta_section_collection_title,
+            descriptionRes = Res.string.meta_section_collection_description,
+        ),
+        MetaScreenSectionDefinition(
+            key = MetaScreenSectionKey.UNIVERSE,
             titleRes = Res.string.universe_title,
             descriptionRes = Res.string.universe_description,
         ),
@@ -467,7 +473,16 @@ object MetaScreenSettingsRepository {
 
     private fun normalizePreferences() {
         val normalized = mutableMapOf<MetaScreenSectionKey, StoredMetaScreenSectionPreference>()
-        definitions.sortedBy { definition -> preferences[definition.key]?.order ?: Int.MAX_VALUE }
+        val orderedDefinitions = definitions.sortedBy { definition -> preferences[definition.key]?.order ?: Int.MAX_VALUE }.toMutableList()
+        // Insert the new section beside Collections when importing an older layout.
+        // Once present, preserve the user's independently saved order and visibility.
+        if (MetaScreenSectionKey.UNIVERSE !in preferences) {
+            val universe = orderedDefinitions.first { it.key == MetaScreenSectionKey.UNIVERSE }
+            orderedDefinitions.remove(universe)
+            val collectionIndex = orderedDefinitions.indexOfFirst { it.key == MetaScreenSectionKey.COLLECTION }
+            orderedDefinitions.add(collectionIndex + 1, universe)
+        }
+        orderedDefinitions
             .forEachIndexed { index, definition ->
                 val stored = preferences[definition.key]
                 normalized[definition.key] = StoredMetaScreenSectionPreference(

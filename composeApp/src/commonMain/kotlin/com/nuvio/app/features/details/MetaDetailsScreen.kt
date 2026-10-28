@@ -707,7 +707,7 @@ fun MetaDetailsScreen(
                         meta.language != null
                 }
                 val hasCollectionSection = remember(meta) {
-                    supportsUniverse(meta.type)
+                    meta.collectionName != null && meta.collectionItems.isNotEmpty()
                 }
                 val hasMoreLikeThisSection = remember(meta) {
                     meta.moreLikeThis.isNotEmpty()
@@ -2220,7 +2220,8 @@ private fun metaSectionHasContent(
         MetaScreenSectionKey.TRAILERS -> hasTrailersSection
         MetaScreenSectionKey.EPISODES -> hasEpisodes
         MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
-        MetaScreenSectionKey.COLLECTION -> hasCollectionSection
+        MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
+        MetaScreenSectionKey.UNIVERSE -> supportsUniverse(meta.type)
         MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
     }
 
@@ -2290,7 +2291,8 @@ private fun ConfiguredMetaSections(
             MetaScreenSectionKey.TRAILERS -> hasTrailersSection
             MetaScreenSectionKey.EPISODES -> hasEpisodes
             MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
-            MetaScreenSectionKey.COLLECTION -> hasCollectionSection
+            MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
+            MetaScreenSectionKey.UNIVERSE -> supportsUniverse(meta.type)
             MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
         }
     }
@@ -2389,7 +2391,20 @@ private fun ConfiguredMetaSections(
                 }
             }
             MetaScreenSectionKey.COLLECTION -> {
-                if (hasCollectionSection) {
+                if (!hasEpisodes && hasCollectionSection) {
+                    DetailPosterRailSection(
+                        title = meta.collectionName.orEmpty(),
+                        items = meta.collectionItems,
+                        watchedKeys = watchedKeys,
+                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        showHeader = showHeader,
+                        horizontalScrollPadding = horizontalScrollPadding,
+                        onPosterClick = onOpenMeta,
+                    )
+                }
+            }
+            MetaScreenSectionKey.UNIVERSE -> {
+                if (supportsUniverse(meta.type)) {
                     com.nuvio.app.features.details.components.UniverseSection(
                         meta = meta,
                         watchedKeys = watchedKeys,

@@ -56,7 +56,7 @@ internal object UniverseRepository {
 
     fun prefetch(meta: MetaDetails, refresh: Boolean = false) {
         if (!supportsUniverse(meta.type)) return
-        if (MetaScreenSettingsRepository.uiState.value.items.any { it.key == MetaScreenSectionKey.COLLECTION && !it.enabled }) return
+        if (MetaScreenSettingsRepository.uiState.value.items.any { it.key == MetaScreenSectionKey.UNIVERSE && !it.enabled }) return
         scope.launch {
             val key = key(meta)
             gate.withLock {

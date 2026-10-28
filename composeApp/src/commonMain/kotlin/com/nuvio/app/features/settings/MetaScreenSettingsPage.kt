@@ -281,7 +281,7 @@ private fun MetaSectionReorderableList(
                             onTabGroupChange = { MetaScreenSettingsRepository.setTabGroup(item.key, it) },
                             dragHandleScope = this@ReorderableItem,
                         )
-                        if (item.key == MetaScreenSectionKey.COLLECTION && item.enabled) {
+                        if (item.key == MetaScreenSectionKey.UNIVERSE && item.enabled) {
                             UniverseLayoutControls(isTablet)
                         }
                     }
@@ -560,7 +560,8 @@ private val MetaScreenSectionKey.titleRes: StringResource
         MetaScreenSectionKey.TRAILERS -> Res.string.settings_meta_trailers
         MetaScreenSectionKey.EPISODES -> Res.string.settings_meta_episodes
         MetaScreenSectionKey.DETAILS -> Res.string.settings_meta_details
-        MetaScreenSectionKey.COLLECTION -> Res.string.universe_title
+        MetaScreenSectionKey.COLLECTION -> Res.string.settings_meta_collection
+        MetaScreenSectionKey.UNIVERSE -> Res.string.universe_title
         MetaScreenSectionKey.MORE_LIKE_THIS -> Res.string.settings_meta_more_like_this
     }
 
@@ -574,7 +575,8 @@ private val MetaScreenSectionKey.descriptionRes: StringResource
         MetaScreenSectionKey.TRAILERS -> Res.string.settings_meta_trailers_description
         MetaScreenSectionKey.EPISODES -> Res.string.settings_meta_episodes_description
         MetaScreenSectionKey.DETAILS -> Res.string.settings_meta_details_description
-        MetaScreenSectionKey.COLLECTION -> Res.string.universe_description
+        MetaScreenSectionKey.COLLECTION -> Res.string.settings_meta_collection_description
+        MetaScreenSectionKey.UNIVERSE -> Res.string.universe_description
         MetaScreenSectionKey.MORE_LIKE_THIS -> Res.string.settings_meta_more_like_this_description
     }
 

@@ -25,7 +25,9 @@ class UniverseSettingsTest {
         val settings = MetaScreenSettingsRepository.uiState.value
         assertEquals(UniverseSortOrder.AiredOldest, settings.universeSortOrder)
         assertEquals(UniversePosterStyle.Landscape, settings.universePosterStyle)
-        assertEquals("Universe", settings.items.first { it.key == MetaScreenSectionKey.COLLECTION }.title)
+        assertEquals("Universe", settings.items.first { it.key == MetaScreenSectionKey.UNIVERSE }.title)
+        val collectionIndex = settings.items.indexOfFirst { it.key == MetaScreenSectionKey.COLLECTION }
+        assertEquals(MetaScreenSectionKey.UNIVERSE, settings.items[collectionIndex + 1].key)
     }
 
     @Test fun choicesRoundTripThroughTheAccountProfileSettingsPayload() {
@@ -37,6 +39,26 @@ class UniverseSettingsTest {
         MetaScreenSettingsRepository.onProfileChanged()
         assertEquals(UniverseSortOrder.MostPopular, MetaScreenSettingsRepository.uiState.value.universeSortOrder)
         assertEquals(UniversePosterStyle.Posters, MetaScreenSettingsRepository.uiState.value.universePosterStyle)
+    }
+
+    @Test fun olderLayoutsInsertUniverseBelowCollectionWithoutChangingCollectionVisibility() {
+        MetaScreenSettingsStorage.savePayload("""{"items":[{"key":"MORE_LIKE_THIS","enabled":true,"order":0},{"key":"COLLECTION","enabled":false,"order":1}]}""")
+        MetaScreenSettingsRepository.onProfileChanged()
+        val items = MetaScreenSettingsRepository.uiState.value.items
+        val collectionIndex = items.indexOfFirst { it.key == MetaScreenSectionKey.COLLECTION }
+        assertFalse(items[collectionIndex].enabled)
+        assertEquals(MetaScreenSectionKey.UNIVERSE, items[collectionIndex + 1].key)
+        assertTrue(items[collectionIndex + 1].enabled)
+        assertEquals(MetaScreenSectionKey.MORE_LIKE_THIS, items.first().key)
+    }
+
+    @Test fun collectionAndUniverseVisibilityAreIndependentAndPersisted() {
+        MetaScreenSettingsRepository.setEnabled(MetaScreenSectionKey.COLLECTION, false)
+        MetaScreenSettingsRepository.setEnabled(MetaScreenSectionKey.UNIVERSE, true)
+        MetaScreenSettingsRepository.onProfileChanged()
+        val items = MetaScreenSettingsRepository.uiState.value.items
+        assertFalse(items.first { it.key == MetaScreenSectionKey.COLLECTION }.enabled)
+        assertTrue(items.first { it.key == MetaScreenSectionKey.UNIVERSE }.enabled)
     }
 
     @Test fun olderAndUnknownSettingsKeepSafeDefaults() {
