@@ -1,131 +1,56 @@
-# Nuvio Universe (unofficial personal fork)
+# Universe implementation and builds
 
-## Feedback update
+Nuvio Universe is a personal Android ARM64 version of Nuvio Mobile, with focused improvements prepared separately for upstream review.
 
-The build now configures the official Nuvio account endpoint using its public
-HTTPS discovery document and anon/publishable client key. It validates the
-read-only auth-settings endpoint before producing an APK. No account password,
-private login token or service-role key is embedded. Explicit email/device-link
-sign-in now clears local guest mode after a real session has been established.
-Existing Nuvio profile, library and progress sync mechanisms remain in use.
+## Detail sections
 
-Layout > Details > Universe provides independent sorting and card-style controls:
-oldest air date first (default), newest first, most popular by IMDb vote count;
-landscape (default) or portrait posters. The existing profile settings payload
-carries these options through Nuvio's account sync. Other Nuvio versions may not
-display or preserve fork-specific controls, even though the shared account is used.
+Official Collections is preserved. Universe is a separate section directly below it, with independent visibility, order and tab grouping. Existing layouts gain the section without changing saved Collections visibility.
 
-Only full movie/TV-movie and series/miniseries types are shown. Known movie
-runtimes below 40 minutes and series runtimes below 10 minutes are excluded.
-Shorts, short series, episodes and specials are excluded. Unknown runtime does
-not disqualify an otherwise full-length type. Connections are limited to
-sequels/prequels and spin-offs in the same continuity; no remake, reference,
-similar-title or broad cross-franchise recommendation queries are used.
+The personal version enables Universe by default. The source-only [upstream proposal](https://github.com/NuvioMedia/NuvioMobile/pull/2425) keeps it disabled until enabled in Layout > Details.
 
-Metadata fetching starts as soon as base title metadata is parsed. The first
-results appear before the bounded follow-up searches finish. Up to six direct
-connections are expanded one step, with cached child responses and request
-deduplication. Cards appear immediately using available artwork while TMDB
-backdrops load. A first uncached network request still depends on the provider;
-this is not a promise of instant or complete franchise discovery.
+## Connections
 
-The tests use fixtures and local SDK session imports; no real user login is
-performed by CI. Primary-account sign-in and on-device appearance still need
-confirmation by the user in the rebuilt APK.
+The independent Kotlin service reads IMDb's website GraphQL endpoint at `https://graphql.imdb.com/`. It requests `follows`, `followed_by`, `spin_off`, `spin_off_from`, `remake_of` and `remade_as`. Reboots are included when IMDb records them under those relationships. References, spoofs and general recommendations are excluded.
 
-Repository: https://github.com/IkoMosiEntertainmentHub/NuvioDebrifyMobile
+This is not a documented supported API contract or a complete curated franchise database. Provider stability and permitted use need review before official adoption. The feature does not require Trakt/Simkl membership.
 
-Based on NuvioMedia/NuvioMobile's current `cmp-rewrite` branch. Initial base:
-`86e0d5bb45f20d541d17f92146d60746420db71d`, 2026-10-28.
+Full movies, TV movies, TV series and miniseries are accepted. Shorts, episodes, videos and specials are filtered out; known movie runtimes below 40 minutes and series runtimes below 10 minutes are excluded. Unknown runtimes can remain.
 
-## Changes
+Direct results appear first. Expansion checks up to six direct neighbours, with a 30-minute cache bounded to 64 titles and up to 50 connection edges per request. Requests are deduplicated; failures preserve available results and support retry.
 
-- The movie detail Collection section becomes Universe, including on TV series.
-- Connections are fetched from IMDb: sequels, prequels, spin-offs and remakes.
-- Nuvio's existing poster rail, landscape-card preference, TMDB backdrop lookup,
-  watched markers, custom posters, unreleased-content preference and title navigation are reused.
-- Duplicate titles retain all relationship labels. Up to 50 connection edges are
-  requested; this is not a complete franchise graph or chronological watch order.
-- Fetching happens separately from the main detail load, with a six-second timeout,
-  a retry state and a 64-title, 30-minute public-metadata cache.
-- Universe has no Trakt, Simkl, debrid or paid membership dependency. Existing
-  optional integrations and TMDB/MDBList behavior remain available.
-- Android includes only arm64-v8a libraries. The package name is
-  `com.ikomosientertainmenthub.nuvio.universe`; Debug adds `.debug`.
-- In-app updates check this fork's Releases, not the upstream app's Releases.
-- The saved `COLLECTION` section setting ID is retained for compatibility with
-  existing section ordering/visibility. Its display name is Universe.
+## Settings
 
-The implementation is written for this Kotlin project; Debrify's AGPL Dart
-application code is not copied into this GPL project. Existing project licensing,
-attributions and branding rights still apply. IMDb's endpoint is not established
-here as a supported third-party API contract; failure is non-fatal to the app.
+Sort by oldest air date (default), newest air date, or IMDb vote count. Choose landscape cards (default) or portrait posters independently of the global poster style. Preferences use the existing Nuvio profile settings payload.
 
-## Build and checks
+## Configuration and builds
 
-Use the upstream Android toolchain (JDK 17, SDK levels in `gradle/libs.versions.toml`).
+Run `python3 scripts/configure-universe.py` before building. It obtains only Nuvio's public anon/publishable client configuration and performs a read-only endpoint check. Private account credentials and service-role keys are never build inputs. TMDB/MDBList can use the existing runtime configuration paths.
 
-```sh
-./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore
-./gradlew :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore
-```
+The **Universe ARM64** workflow runs tests and builds an optimized release artifact. Without signing secrets, that APK is unsigned for offline signing. It must be signed and verified before publishing as an installable release.
 
-The **Universe ARM64** Actions workflow runs these checks, builds an APK, and
-asserts the APK contains only `lib/arm64-v8a` native libraries. Download the APK
-from its workflow artifacts. Enable Actions in the fork if GitHub disables it.
-
-The optional `TMDB_API_KEY` and `MDBLIST_CLIENT_ID` repository secrets populate
-the upstream runtime configuration. A user can also configure their own TMDB key
-and MDBList API key in the app. Do not commit credentials or reuse upstream private
-OAuth client credentials. No Trakt/Simkl client credentials are required by Universe.
-
-Debug builds are for testing. CI's generated debug signing key is not persistent,
-so independently produced debug APKs may require uninstalling the previous debug
-app. For install-over updates, use a release build and preserve the same signing key.
-
-To build a signed release using the workflow, configure:
+For workflow signing, configure these repository secrets privately:
 
 - `UNIVERSE_KEYSTORE_BASE64`
 - `UNIVERSE_KEYSTORE_PASSWORD`
 - `UNIVERSE_KEY_ALIAS`
 - `UNIVERSE_KEY_PASSWORD`
 
-Then dispatch **Universe ARM64** with `release` enabled. Signing keys must remain
-private and backed up. Release publication is a separate action; the workflow uploads
-an artifact and does not publish a GitHub Release. To use the in-app updater, publish
-a signed release APK with a semantic version newer than the installed version.
-The displayed version follows `<official version>-NuvioUniverse-<fork version>`
-from `universe-version.properties`. The build number comes directly from
-upstream's `CURRENT_PROJECT_VERSION` in `iosApp/Configuration/Version.xcconfig`;
-retain the official number for fork-only releases and increment the fork version.
-The in-app updater compares fork version components numerically.
+Then dispatch the workflow with `release` enabled. Preserve the same production key for future updates and keep an offline backup. Never publish the private key or passwords.
 
-The workflow now produces an optimized unsigned release by default for offline
-signing. Sign it with the persistent private fork key, verify the certificate and
-ARM64-only packaging, and attach the APK to a GitHub Release. Publish release
-notes covering additions, fixes, installation, validation, and known limits for
-every release. Never attach the private signing key or password.
+## Versions and releases
 
-## Updating from upstream
+Personal version names are read from `universe-version.properties`. Build numbers come from official Nuvio's `CURRENT_PROJECT_VERSION` in `iosApp/Configuration/Version.xcconfig`.
 
-Start from your clean feature/default branch and run:
+Current planned release: **0.6.5-beta-NuvioUniverse-1.0.0 (148)**.
 
-```powershell
-./scripts/update-universe-upstream.ps1
-```
+Publish signed ARM64 APKs on [Nuvio Universe Releases](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases), with additions, fixes, installation changes and actual validation results. Earlier ephemeral-key debug APKs have a separate identity from production builds.
 
-It fetches current upstream `cmp-rewrite` and merges into a new review branch.
-It does not reset or force-push. Resolve any conflicts and rerun tests and the
-ARM64 build before merging the update. Preserve this fork's application ID,
-update repository URL, Universe section and signing key across updates.
+## Updating upstream
 
-## Initial validation
+From a clean checkout, run `./scripts/update-universe-upstream.ps1`. It fetches official `cmp-rewrite` and merges it onto a new review branch. Resolve conflicts and validate before merging into the personal build. The script does not force-push.
 
-Nine Universe logic tests passed in an isolated JVM harness using the actual
-repository service/test sources, with minimal app/platform stubs. They cover
-deduplication, relation labels, movie/series conversion, malformed data, TTL and
-bounded cache behavior, TMDB ID lookup, retry after failure, timeout, cancellation
-and unsupported content. This is not a full Compose/Android build or device test.
-The local full Gradle configuration attempt failed before app compilation with
-an AccessDeniedException opening a Gradle library JAR. The CI build is intended
-to provide the remaining integration and APK validation; inspect its actual result.
+Use `upstream-universe-collections` only for the focused official proposal. Keep personal versioning, branding, signing and release-feed changes out of that branch.
+
+## Verified baseline
+
+The personal implementation passed 37 Android host tests and 5 configuration checks, followed by an ARM64 release build. The upstream-only source passed 27 Android host tests and an original-identity debug build. Earlier debug-build device screenshots are in the README and official PR. Current-revision combined-rail screenshots, current account-login verification and iOS verification remain pending.

@@ -1,67 +1,53 @@
 ## Summary
 
-<!-- What changed in this PR? -->
+Describe the change and resulting behavior.
 
 ## PR type
 
-<!-- Check exactly one. PRs outside these types are not accepted. -->
-- [ ] Reproducible bug fix
-- [ ] UI glitch/bug fix
-- [ ] Behavior bug/regression fix
-- [ ] Small maintenance only, with no UI or behavior change
-- [ ] Docs accuracy fix
-- [ ] Translation/localization only
-- [ ] Approved larger or directional change
+- [ ] Bug fix
+- [ ] Feature or behavior improvement
+- [ ] Documentation, translation or maintenance
 
 ## Why
 
-<!-- Why this change is needed. Explain the user-visible bug, regression, maintenance need, docs error, or approved request. -->
+Explain the problem or use case.
 
 ## Issue or approval
 
-<!-- Required. Link the bug issue or approved feature request. For docs/translation/maintenance with no issue, explain why no issue is needed. -->
-<!-- Examples: Fixes #123 / Approved in #456 / No linked issue: typo-only docs fix. -->
+Link the relevant issue, or describe the repository owner's request.
 
 ## UI / behavior impact
 
-<!-- Check every box that applies. At least one must be checked. -->
+- [ ] UI changes
+- [ ] Behavior changes
 - [ ] No UI change
 - [ ] No behavior change
-- [ ] UI changed only to fix a documented glitch/bug
-- [ ] Behavior changed only to fix a documented bug/regression
-- [ ] UI change has explicit maintainer approval
-- [ ] Behavior change has explicit maintainer approval
+
+Describe the before/after behavior and any changed defaults.
 
 ## Policy check
 
-<!-- ALL boxes must be checked or the PR will be closed without review. -->
-- [ ] I have read and understood `CONTRIBUTING.md`.
-- [ ] This PR is small, focused, and limited to one problem.
-- [ ] This PR is not cosmetic-only.
-- [ ] Any UI change fixes a linked glitch/bug and includes visual proof, or this PR has no UI change.
-- [ ] Any behavior change fixes a linked bug/regression or has explicit approval, or this PR has no behavior change.
-- [ ] This PR does not bundle unrelated refactors, cleanups, formatting, or drive-by changes.
-- [ ] This PR does not add dependencies, architecture changes, migrations, or product-direction changes without explicit approval.
-- [ ] I listed the testing performed below.
-
-> UI polish, cosmetic-only changes, minor behavior tweaks, and unapproved product changes will be closed without review.
+- [ ] I read this repository's CONTRIBUTING.md.
+- [ ] This change is focused and excludes unrelated changes.
+- [ ] No private credentials or signing keys are included.
+- [ ] Testing and remaining limitations are described.
 
 ## Scope boundaries
 
-<!-- List anything intentionally not changed. If this is a bug fix, confirm it does not include extra UI polish or behavior tweaks. -->
+Explain what this change affects.
 
 ## Testing
 
-<!-- What you tested and how. Include devices/emulators, commands, and manual flows. Do not write only "not tested" unless this is docs/translation-only. -->
+List checks actually completed and their results. Separate device testing from automated testing.
 
-## Screenshots / Video (UI changes only)
+## Screenshots / Video
 
-<!-- Required for any UI change. Write "Not a UI change" only if no UI changed. -->
+Attach UI evidence when relevant and identify its build version.
 
 ## Breaking changes
 
-<!-- Any breaking behavior/config/schema changes? If none, write: None. -->
+Describe installation, settings, API or compatibility changes, or state None.
 
 ## Linked issues
 
-<!-- Required for bug fixes, UI glitch fixes, behavior fixes, and approved changes. For docs/translation/maintenance with no issue, write: No linked issue - reason. -->
+Link related issues. If proposing official Nuvio adoption, include the focused source branch and upstream issue/PR; do not claim maintainer approval without a recorded approval.
