@@ -44,10 +44,6 @@ val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").or
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
     ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
-val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(':') }
-val buildsReleaseApks = requestedTaskNames.any {
-    it.startsWith("assemble", ignoreCase = true) && it.endsWith("Release", ignoreCase = true)
-}
 
 android {
     namespace = "com.nuvio.android"
@@ -66,12 +62,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.nuvio.app"
+        applicationId = "com.ikomosientertainmenthub.nuvio.universe"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = releaseAppVersionCode
         versionName = releaseAppVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     flavorDimensions += "distribution"
@@ -111,9 +108,8 @@ android {
 
     splits {
         abi {
-            isEnable = buildsReleaseApks
-            reset()
-            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            // One APK, with only arm64-v8a native libraries from defaultConfig.
+            isEnable = false
             isUniversalApk = false
         }
     }
@@ -145,7 +141,7 @@ android {
 
 androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
-        variant.applicationId.set("com.nuviodebug.com")
+        variant.applicationId.set("com.ikomosientertainmenthub.nuvio.universe.debug")
     }
 }
 

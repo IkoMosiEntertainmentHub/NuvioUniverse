@@ -194,8 +194,8 @@ object MetaScreenSettingsRepository {
         ),
         MetaScreenSectionDefinition(
             key = MetaScreenSectionKey.COLLECTION,
-            titleRes = Res.string.meta_section_collection_title,
-            descriptionRes = Res.string.meta_section_collection_description,
+            titleRes = Res.string.universe_title,
+            descriptionRes = Res.string.universe_description,
         ),
         MetaScreenSectionDefinition(
             key = MetaScreenSectionKey.MORE_LIKE_THIS,

@@ -44,6 +44,7 @@ fun DetailPosterRailSection(
     headerHorizontalPadding: Dp = 0.dp,
     horizontalScrollPadding: Dp = 0.dp,
     sourceLabel: String? = null,
+    itemSubtitle: ((MetaPreview) -> String?)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
 ) {
@@ -83,6 +84,7 @@ fun DetailPosterRailSection(
                 val cardItem = remember(item, localizedBackdrop.url) {
                     localizedBackdrop.url?.let { item.copy(banner = it) } ?: item
                 }
+                Column {
                 HomePosterCard(
                     item = cardItem,
                     useLandscapeBackdropMode = landscape,
@@ -95,6 +97,18 @@ fun DetailPosterRailSection(
                     onClick = onPosterClick?.let { { it(item) } },
                     onLongClick = onPosterLongClick?.let { { it(item) } },
                 )
+                itemSubtitle?.invoke(item)?.let { subtitle ->
+                    Text(
+                        text = subtitle,
+                        modifier = Modifier.width(if (landscape) landscapePosterWidth(posterCardStyle.widthDp) else posterCardStyle.widthDp.dp)
+                            .padding(top = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                }
             }
         }
 

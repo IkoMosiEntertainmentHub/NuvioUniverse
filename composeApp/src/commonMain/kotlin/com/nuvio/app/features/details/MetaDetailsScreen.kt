@@ -707,7 +707,7 @@ fun MetaDetailsScreen(
                         meta.language != null
                 }
                 val hasCollectionSection = remember(meta) {
-                    meta.collectionName != null && meta.collectionItems.isNotEmpty()
+                    supportsUniverse(meta.type)
                 }
                 val hasMoreLikeThisSection = remember(meta) {
                     meta.moreLikeThis.isNotEmpty()
@@ -2220,7 +2220,7 @@ private fun metaSectionHasContent(
         MetaScreenSectionKey.TRAILERS -> hasTrailersSection
         MetaScreenSectionKey.EPISODES -> hasEpisodes
         MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
-        MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
+        MetaScreenSectionKey.COLLECTION -> hasCollectionSection
         MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
     }
 
@@ -2290,7 +2290,7 @@ private fun ConfiguredMetaSections(
             MetaScreenSectionKey.TRAILERS -> hasTrailersSection
             MetaScreenSectionKey.EPISODES -> hasEpisodes
             MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
-            MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
+            MetaScreenSectionKey.COLLECTION -> hasCollectionSection
             MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
         }
     }
@@ -2389,10 +2389,9 @@ private fun ConfiguredMetaSections(
                 }
             }
             MetaScreenSectionKey.COLLECTION -> {
-                if (!hasEpisodes && hasCollectionSection) {
-                    DetailPosterRailSection(
-                        title = meta.collectionName.orEmpty(),
-                        items = meta.collectionItems,
+                if (hasCollectionSection) {
+                    com.nuvio.app.features.details.components.UniverseSection(
+                        meta = meta,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                         showHeader = showHeader,

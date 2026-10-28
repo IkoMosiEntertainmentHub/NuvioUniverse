@@ -1,0 +1,8 @@
+<resources>
+    <string name="universe_title">Universe</string>
+    <string name="universe_description">Sequels, prequels, spin-offs and remakes for movies and shows.</string>
+    <string name="universe_source">Connections from IMDb</string>
+    <string name="universe_unavailable">Universe is temporarily unavailable.</string>
+    <string name="universe_retry">Try again</string>
+    <string name="universe_empty">No franchise connections found.</string>
+</resources>
