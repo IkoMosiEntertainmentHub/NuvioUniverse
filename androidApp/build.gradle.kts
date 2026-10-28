@@ -48,6 +48,7 @@ val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").or
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
     ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
+val buildsReleaseApks = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
 
 android {
     namespace = "com.nuvio.android"
@@ -72,7 +73,9 @@ android {
         versionCode = releaseAppVersionCode
         versionName = releaseAppVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a") }
+        if (!buildsReleaseApks) {
+            ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a") }
+        }
     }
 
     flavorDimensions += "distribution"
@@ -113,7 +116,7 @@ android {
     splits {
         abi {
             // Separate small release APKs; keep one combined APK for debug testing.
-            isEnable = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+            isEnable = buildsReleaseApks
             reset()
             include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = false
