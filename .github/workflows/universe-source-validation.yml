@@ -18,6 +18,8 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v6
+      - name: Prepare local runtime properties
+        run: touch local.properties
       - name: Test Universe and existing ratings settings
         run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' --tests 'com.nuvio.app.features.details.UniverseSettingsTest' --tests 'com.nuvio.app.features.details.RatingsSettingsTest' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Build original fullDebug app with Universe sources
