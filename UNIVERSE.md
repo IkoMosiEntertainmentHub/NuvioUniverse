@@ -94,8 +94,17 @@ Then dispatch **Universe ARM64** with `release` enabled. Signing keys must remai
 private and backed up. Release publication is a separate action; the workflow uploads
 an artifact and does not publish a GitHub Release. To use the in-app updater, publish
 a signed release APK with a semantic version newer than the installed version.
-Increment `CURRENT_PROJECT_VERSION` in `iosApp/Configuration/Version.xcconfig`
-for each release so Android version codes advance too.
+The displayed version follows `<official version>-NuvioUniverse-<fork version>`
+from `universe-version.properties`. The build number comes directly from
+upstream's `CURRENT_PROJECT_VERSION` in `iosApp/Configuration/Version.xcconfig`;
+retain the official number for fork-only releases and increment the fork version.
+The in-app updater compares fork version components numerically.
+
+The workflow now produces an optimized unsigned release by default for offline
+signing. Sign it with the persistent private fork key, verify the certificate and
+ARM64-only packaging, and attach the APK to a GitHub Release. Publish release
+notes covering additions, fixes, installation, validation, and known limits for
+every release. Never attach the private signing key or password.
 
 ## Updating from upstream
 
