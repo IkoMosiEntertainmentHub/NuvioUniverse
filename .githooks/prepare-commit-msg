@@ -1,0 +1,4 @@
+#!/bin/sh
+# Repository-local only. A failed version check stops the commit.
+python_executable=$(git config --get nuvio.python || echo python)
+"$python_executable" scripts/universe_version.py prepare

@@ -1,6 +1,11 @@
 package com.nuvio.app.features.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import com.nuvio.app.features.details.*
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,7 +22,26 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun UniverseLayoutControls(isTablet: Boolean) {
     val settings by MetaScreenSettingsRepository.uiState.collectAsStateWithLifecycle()
+    var showDiscovery by remember { mutableStateOf(false) }
+    if (showDiscovery) UniverseDiscoveryDialog { showDiscovery = false }
     Column(Modifier.padding(bottom = 12.dp)) {
+        TextButton(onClick = { showDiscovery = true }) { Text("Discover and manage universes") }
+        Text("Display Universe features", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
+        UniverseFeature.entries.forEach { feature ->
+            SettingsSwitchRow(
+                title = feature.label,
+                description = if (feature == UniverseFeature.FranchiseCollections) "Generated browsing only; your saved collections are unchanged." else null,
+                checked = settings.universeConfiguration.enabled(feature),
+                isTablet = isTablet,
+                onCheckedChange = { MetaScreenSettingsRepository.setUniverseConfiguration(
+                    MetaScreenSettingsRepository.uiState.value.universeConfiguration.withFeature(feature, it)) },
+            )
+        }
+        SettingsSwitchRow(title = "Hide Unreleased Titles", description = "Hide upcoming titles and titles without a confirmed release from generated Universe listings.",
+            checked = settings.universeConfiguration.hideUnreleased, isTablet = isTablet,
+            onCheckedChange = { MetaScreenSettingsRepository.setUniverseConfiguration(
+                MetaScreenSettingsRepository.uiState.value.universeConfiguration.copy(hideUnreleased = it)) })
+
         SettingsChipRow(
             title = stringResource(Res.string.universe_sort_title),
             description = stringResource(Res.string.universe_sort_description),

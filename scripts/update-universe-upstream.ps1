@@ -8,10 +8,21 @@ $upstreamCommit = git rev-parse FETCH_HEAD
 $updateBranch = 'update/nuvio-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
 git switch -c $updateBranch
 if ($LASTEXITCODE -ne 0) { throw 'Could not create the update branch.' }
-git merge --no-edit $upstreamCommit
+$personalVersionBefore = Get-Content -LiteralPath 'universe-version.properties' -Raw
+$env:NUVIO_OFFICIAL_SYNC = '1'
+try { git merge --no-edit $upstreamCommit }
+finally { Remove-Item Env:NUVIO_OFFICIAL_SYNC -ErrorAction SilentlyContinue }
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'The update needs conflict resolution. Your previous branch is unchanged.'
     Write-Host 'Resolve conflicts, or use git merge --abort to cancel.'
     exit 1
 }
-Write-Host "Update prepared on $updateBranch. Run the Universe tests and ARM64 build before merging it."
+if ((Get-Content -LiteralPath 'universe-version.properties' -Raw) -ne $personalVersionBefore) {
+    throw 'STOP: upstream synchronization changed the personal version ledger. Restore it from the previous branch before continuing.'
+}
+foreach ($buildFile in @('androidApp/build.gradle.kts', 'composeApp/build.gradle.kts')) {
+    if ((Get-Content -LiteralPath $buildFile -Raw) -notmatch 'personalRevision') {
+        throw "STOP: restore independent version composition in $buildFile before building."
+    }
+}
+Write-Host "Update prepared on $updateBranch. Personal version preserved. Run the Universe tests and both ARM builds before merging it."

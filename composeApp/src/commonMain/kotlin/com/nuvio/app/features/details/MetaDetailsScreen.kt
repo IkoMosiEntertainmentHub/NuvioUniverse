@@ -2326,10 +2326,12 @@ private fun ConfiguredMetaSections(
             }
             MetaScreenSectionKey.PRODUCTION -> {
                 if (hasProductionSection) {
+                    com.nuvio.app.features.details.components.ProductionSearchButton(meta, onOpenMeta)
                     DetailProductionSection(meta = meta, showHeader = showHeader, onCompanyClick = onCompanyClick)
                 }
             }
             MetaScreenSectionKey.CAST -> {
+                com.nuvio.app.features.details.components.ProductionSearchButton(meta, onOpenMeta)
                 DetailCastSection(
                     cast = meta.cast,
                     showHeader = showHeader,

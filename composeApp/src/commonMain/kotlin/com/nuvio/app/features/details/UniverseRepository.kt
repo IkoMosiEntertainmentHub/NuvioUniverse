@@ -22,7 +22,7 @@ import kotlinx.serialization.json.*
 import kotlin.time.Clock
 
 /** A title can have several relationships to the current movie or show. */
-internal data class UniverseConnection(val item: MetaPreview, val relations: List<String>)
+internal data class UniverseConnection(val item: MetaPreview, val relations: List<String>, val evidence: String = "IMDb title connections")
 internal data class UniverseLoadState(
     val items: List<UniverseConnection>? = null,
     val loading: Boolean = false,
@@ -50,6 +50,8 @@ internal object UniverseRepository {
         },
         resolveImdb = { id, type -> TmdbService.tmdbToImdb(id, type) },
         nowMs = { Clock.System.now().toEpochMilliseconds() },
+        verify = { ProductionDiscovery.verify(it) },
+        timeoutMs = 30_000,
     )
 
     fun key(meta: MetaDetails): String = "${meta.type}:${meta.id}:${meta.imdbId.orEmpty()}"
@@ -94,6 +96,7 @@ internal class UniverseClient(
     private val resolveImdb: suspend (Int, String) -> String?,
     private val nowMs: () -> Long,
     private val timeoutMs: Long = 6_000,
+    private val verify: suspend (UniverseConnection) -> UniverseConnection? = { it },
 ) {
     private data class Cached(val at: Long, val items: List<UniverseConnection>)
     private val mutex = Mutex()
@@ -111,20 +114,20 @@ internal class UniverseClient(
                 val imdbId = universeImdbId(meta.imdbId) ?: universeImdbId(meta.id)
                     ?: universeTmdbId(meta.id)?.let { resolveImdb(it, meta.type) }?.let(::universeImdbId)
                     ?: return@withTimeoutOrNull emptyList()
-                val direct = withTimeoutOrNull(timeoutMs) { fetchConnections(imdbId) } ?: return@withTimeoutOrNull null
+                val direct = withTimeoutOrNull(timeoutMs) { fetchConnections(imdbId, onPartial) } ?: return@withTimeoutOrNull null
                 onPartial(direct)
                 if (!expandConnections || direct.isEmpty()) return@withTimeoutOrNull direct
                 // Expand sequel, spin-off and remake edges, including reboots tagged as remakes.
                 // Never mix in recommendations or incidental references.
                 val related = withTimeoutOrNull(timeoutMs) {
                     coroutineScope {
-                        direct.take(6).map { parent ->
+                        direct.filter { entry -> entry.relations.none { it in setOf("Remake of", "Remade as", "Crossover", "Crossover with") } }.take(6).map { parent ->
                             async { fetchConnections(parent.item.id).orEmpty() }
                         }.awaitAll().flatten()
                     }
                 }.orEmpty()
                 val known = direct.associateByTo(linkedMapOf()) { it.item.id }
-                related.filter { it.item.id != imdbId }.forEach { entry ->
+                related.filter { it.item.id != imdbId && it.relations.none { relation -> relation in setOf("Remake of", "Remade as", "Crossover", "Crossover with") } }.forEach { entry ->
                     if (entry.item.id !in known) known[entry.item.id] = entry.copy(relations = listOf("Franchise connection"))
                 }
                 known.values.toList()
@@ -136,7 +139,7 @@ internal class UniverseClient(
         }
     }
 
-    private suspend fun fetchConnections(imdbId: String): List<UniverseConnection>? {
+    private suspend fun fetchConnections(imdbId: String, onPartial: (List<UniverseConnection>) -> Unit = {}): List<UniverseConnection>? {
         val lock = requestLocks[(imdbId.hashCode() and Int.MAX_VALUE) % requestLocks.size]
         return lock.withLock request@{
             mutex.withLock {
@@ -149,7 +152,20 @@ internal class UniverseClient(
                 }.toString()
                 val response = request(body)
                 if (response.status != 200) return@request null
-                val items = parseUniverse(response.body, imdbId) ?: return@request null
+                val parsed = parseUniverse(response.body, imdbId) ?: return@request null
+                val candidates = mergeUniverseEvidence(parsed, explicitUniverseConnections(imdbId))
+                val verified = mutableListOf<UniverseConnection>()
+                val verifiedGate = Mutex()
+                val items = coroutineScope {
+                    candidates.take(50).map { candidate -> async {
+                        val entry = try { verify(candidate) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+                        if (entry != null) verifiedGate.withLock {
+                            verified += entry
+                            onPartial(verified.toList())
+                        }
+                        entry
+                    } }.awaitAll().filterNotNull()
+                }
                 mutex.withLock {
                     cache.remove(imdbId)
                     cache[imdbId] = Cached(nowMs(), items)
@@ -188,7 +204,9 @@ internal fun parseUniverse(payload: String, sourceImdbId: String): List<Universe
         val id = universeImdbId(associated.text("id")) ?: continue
         if (id == sourceImdbId) continue
         val name = (associated["titleText"] as? JsonObject)?.text("text") ?: continue
+        if (!establishedTitle(name)) continue
         val relation = (node["category"] as? JsonObject)?.text("text") ?: continue
+        if (universeFeature(relation) == null) continue
         val old = titles[id]
         if (old != null) {
             titles[id] = old.copy(relations = (old.relations + relation).distinct())

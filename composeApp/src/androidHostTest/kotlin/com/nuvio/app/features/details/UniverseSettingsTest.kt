@@ -21,6 +21,20 @@ class UniverseSettingsTest {
 
     @AfterTest fun clear() { MetaScreenSettingsRepository.clearLocalState() }
 
+    @Test fun allFeatureChoicesAndUniverseSelectionsPersistAcrossRestarts() {
+        MetaScreenSettingsRepository.setEnabled(MetaScreenSectionKey.COLLECTION, false)
+        val choices = UniverseConfiguration(continuations = false, spinOffs = false,
+            franchiseCollections = true, prequels = false, crossovers = false, related = false,
+            hideUnreleased = true, selections = listOf(UniverseSelection("tt123", "movie", "A title", false)))
+        MetaScreenSettingsRepository.setUniverseConfiguration(choices)
+        MetaScreenSettingsRepository.onProfileChanged()
+        assertEquals(choices, MetaScreenSettingsRepository.uiState.value.universeConfiguration)
+        assertFalse(MetaScreenSettingsRepository.uiState.value.items.first { it.key == MetaScreenSectionKey.COLLECTION }.enabled)
+        MetaScreenSettingsRepository.setUniverseSelection(UniverseSelection("tt123", "movie", "A title", true))
+        assertTrue(MetaScreenSettingsRepository.uiState.value.universeConfiguration.selections.single().enabled)
+        assertTrue(MetaScreenSettingsRepository.uiState.value.universeConfiguration.hideUnreleased)
+    }
+
     @Test fun defaultIsOldestFirstWithLandscapePosters() {
         val settings = MetaScreenSettingsRepository.uiState.value
         assertEquals(UniverseSortOrder.AiredOldest, settings.universeSortOrder)

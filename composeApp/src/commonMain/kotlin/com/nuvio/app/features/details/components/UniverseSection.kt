@@ -20,7 +20,7 @@ import com.nuvio.app.features.details.UniverseRepository
 import com.nuvio.app.features.details.UniverseLoadState
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.UniversePosterStyle
-import com.nuvio.app.features.details.sortUniverse
+import com.nuvio.app.features.details.*
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.filterReleasedItems
@@ -45,45 +45,44 @@ internal fun UniverseSection(
     LaunchedEffect(meta.id, meta.imdbId) {
         UniverseRepository.prefetch(meta)
     }
-    val catalogSettings by remember {
-        HomeCatalogSettingsRepository.snapshot()
-        HomeCatalogSettingsRepository.uiState
-    }.collectAsStateWithLifecycle()
-    val connectionItems = sortUniverse(items.orEmpty(), options.universeSortOrder).map { it.item }
-    val visibleItems = if (catalogSettings.hideUnreleasedContent) {
-        connectionItems.filterReleasedItems(CurrentDateProvider.todayIsoDate())
-    } else connectionItems
+    val configuration = options.universeConfiguration
+    val sourceIds = setOf(meta.id, meta.imdbId).filterNotNull()
+    if (configuration.selections.any { !it.enabled && it.id in sourceIds }) return
+    val filtered = visibleUniverseConnections(items.orEmpty(), configuration, CurrentDateProvider.todayIsoDate())
+    val groups = UniverseFeature.entries.filter { it != UniverseFeature.FranchiseCollections }.mapNotNull { feature ->
+        val connections = filtered.filter { it.relations.any { relation -> universeFeature(relation) == feature } }
+        if (connections.isEmpty()) null else feature.label to connections
+    }.toMutableList()
+    if (configuration.franchiseCollections) {
+        val franchise = items.orEmpty().filter { !configuration.hideUnreleased || it.isReleased(CurrentDateProvider.todayIsoDate()) }
+        if (franchise.isNotEmpty()) groups += "Franchise Collections · includes alternate continuities" to franchise
+    }
     val pattern = CustomPosterUrlRepository.let {
         it.ensureLoaded()
         it.patternForScreen(CustomPosterScreen.DETAILS)
     }
-    val cards = visibleItems.withCustomPosterUrls(pattern)
-    if (cards.isEmpty()) {
-        Column(modifier = Modifier.padding(vertical = 12.dp)) {
-            if (showHeader) Text(stringResource(Res.string.universe_title), style = MaterialTheme.typography.titleLarge)
-            if (loading) {
-                CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
-            } else if (items == null) {
-                Text(stringResource(Res.string.universe_unavailable), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { UniverseRepository.prefetch(meta, refresh = true) }) { Text(stringResource(Res.string.universe_retry)) }
-            } else {
-                Text(stringResource(Res.string.universe_empty), style = MaterialTheme.typography.bodyMedium)
-            }
+    if (groups.isEmpty()) {
+        if (loading) CircularProgressIndicator(modifier = Modifier.padding(vertical = 12.dp))
+        else if (items == null) TextButton(onClick = { UniverseRepository.prefetch(meta, refresh = true) }) {
+            Text(stringResource(Res.string.universe_retry))
         }
-    } else {
-        val relations = items.orEmpty().associate { it.item.id to it.relations.joinToString(" · ") }
-        DetailPosterRailSection(
-            title = stringResource(Res.string.universe_title),
-            items = cards,
-            watchedKeys = watchedKeys,
-            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-            showHeader = showHeader,
-            horizontalScrollPadding = horizontalScrollPadding,
-            sourceLabel = stringResource(Res.string.universe_source),
-            itemSubtitle = { relations[it.id] },
-            landscapeOverride = options.universePosterStyle == UniversePosterStyle.Landscape,
-            waitForBackdrop = false,
-            onPosterClick = onPosterClick,
-        )
+        return
+    }
+    Column {
+        if (showHeader) Text(stringResource(Res.string.universe_title), style = MaterialTheme.typography.titleLarge)
+        groups.forEach { (label, connections) ->
+            val cards = sortUniverse(connections, options.universeSortOrder).map { it.item }.withCustomPosterUrls(pattern)
+            val subtitles = connections.associate { it.item.id to (it.relations.joinToString(" · ") +
+                (it.item.status?.let { status -> " · $status" } ?: "")) }
+            DetailPosterRailSection(
+                title = label, items = cards, watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys, showHeader = true,
+                horizontalScrollPadding = horizontalScrollPadding,
+                sourceLabel = "IMDb / TMDB · explicit connections; alternate continuities stay labelled",
+                itemSubtitle = { subtitles[it.id] },
+                landscapeOverride = options.universePosterStyle == UniversePosterStyle.Landscape,
+                waitForBackdrop = false, onPosterClick = onPosterClick,
+            )
+        }
     }
 }

@@ -41,10 +41,20 @@ val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconf
 val universeVersion = Properties().apply {
     rootProject.file("universe-version.properties").inputStream().use { load(it) }
 }
-val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").orNull
-    ?: universeVersion.getProperty("versionName")
-    ?: readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
-    ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
+val upstreamMarketingVersion = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
+    ?: error("Missing upstream MARKETING_VERSION")
+val upstreamLabel = Properties().apply {
+    rootProject.file("universe-upstream-label.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val upstreamVersionName = providers.gradleProperty("nuvio.app.versionName").orNull
+    ?: if (upstreamLabel.getProperty("marketingVersion") == upstreamMarketingVersion)
+        upstreamLabel.getProperty("releaseVersion", upstreamMarketingVersion) else upstreamMarketingVersion
+val personalRevision = universeVersion.getProperty("personalRevision").toInt().also { require(it >= 0) }
+val personalTotal = 100 + personalRevision
+val personalVersion = "${personalTotal / 100}.${personalTotal / 10 % 10}.${personalTotal % 10}"
+val officialBuild = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")?.toIntOrNull()
+    ?: error("Missing upstream build number")
+val releaseAppVersionName = "NuvioUniverse-${upstreamVersionName}-(${officialBuild})-v${personalVersion}"
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
     ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")

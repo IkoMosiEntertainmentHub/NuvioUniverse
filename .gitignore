@@ -32,6 +32,8 @@ tools
 AGENTS.md
 PERFORMANCE_FINDINGS.md
 scripts/*
+!scripts/universe_version.py
+!scripts/test_universe_version.py
 !scripts/update-universe-upstream.ps1
 !scripts/configure-universe.py
 !scripts/test_configure_universe.py

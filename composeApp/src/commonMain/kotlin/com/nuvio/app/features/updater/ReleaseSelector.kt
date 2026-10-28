@@ -31,7 +31,7 @@ internal object ReleaseSelector {
     private fun isPrerelease(
         release: GitHubReleaseDto,
         version: SemanticVersion
-    ): Boolean = release.prerelease ||
+    ): Boolean = if (VersionUtils.isUniverseIdentifier(release.tagName) || VersionUtils.isUniverseIdentifier(release.name)) release.prerelease else release.prerelease ||
         version.prerelease.isNotEmpty() ||
         prereleaseNamePattern.containsMatchIn(release.name.orEmpty())
 

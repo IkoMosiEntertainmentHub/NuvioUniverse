@@ -55,7 +55,16 @@ internal object VersionUtils {
         return raw.trim().removePrefix("v").removePrefix("V")
     }
 
+    fun isUniverseIdentifier(raw: String?): Boolean = raw?.trim()?.startsWith("NuvioUniverse-") == true
+
     fun parse(raw: String?): SemanticVersion? {
+        val universe = Regex("^NuvioUniverse-(.+)-\\((\\d+)\\)-v(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(normalize(raw))
+        if (universe != null) return SemanticVersion(
+            universe.groupValues[3].toLongOrNull() ?: return null,
+            universe.groupValues[4].toLongOrNull() ?: return null,
+            universe.groupValues[5].toLongOrNull() ?: return null,
+            emptyList(),
+        )
         // Keep the friendly fork label, but compare its version components numerically.
         val comparable = normalize(raw).replace("-beta-NuvioUniverse-", "-beta.NuvioUniverse.")
         val match = versionPattern.matchEntire(comparable) ?: return null
@@ -75,6 +84,10 @@ internal object VersionUtils {
     fun isRemoteNewer(remote: String?, local: String?): Boolean {
         val remoteVersion = parse(remote) ?: return false
         val localVersion = parse(local) ?: return false
+        if (isUniverseIdentifier(remote) && isUniverseIdentifier(local) && remoteVersion == localVersion) {
+            fun build(value: String?): Long = Regex("-\\((\\d+)\\)-v").find(value.orEmpty())?.groupValues?.get(1)?.toLongOrNull() ?: -1
+            return build(remote) > build(local)
+        }
         return remoteVersion > localVersion
     }
 }
