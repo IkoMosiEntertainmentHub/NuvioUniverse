@@ -30,6 +30,9 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v6
       - name: Configure optional metadata and release signing
         env:
@@ -92,3 +95,4 @@ jobs:
           name: universe-test-reports-${{ github.run_number }}
           path: composeApp/build/reports/tests/
           if-no-files-found: ignore
+
