@@ -52,7 +52,7 @@ internal object UniverseRepository {
         nowMs = { Clock.System.now().toEpochMilliseconds() },
     )
 
-    fun key(meta: MetaDetails): String = "${meta.type}:${meta.id}"
+    fun key(meta: MetaDetails): String = "${meta.type}:${meta.id}:${meta.imdbId.orEmpty()}"
 
     fun prefetch(meta: MetaDetails, refresh: Boolean = false) {
         if (!supportsUniverse(meta.type)) return

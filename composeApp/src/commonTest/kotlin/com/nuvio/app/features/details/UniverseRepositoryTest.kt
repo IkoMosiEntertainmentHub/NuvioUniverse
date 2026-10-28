@@ -187,6 +187,11 @@ class UniverseRepositoryTest {
         assertEquals(listOf("tt2", "tt1", "tt3"), sortUniverse(cards, UniverseSortOrder.MostPopular).map { it.item.id })
     }
 
+    @Test fun `new IMDb enrichment does not reuse an unresolved empty state`() {
+        val before = meta.copy(id = "mal:123", imdbId = null)
+        assertNotEquals(UniverseRepository.key(before), UniverseRepository.key(before.copy(imdbId = "tt123")))
+    }
+
     private fun response(body: String, status: Int = 200) = RawHttpResponse(status, "", "https://graphql.imdb.com/", body, emptyMap())
     private fun payload(vararg edges: JsonObject): String = buildJsonObject {
         putJsonObject("data") { putJsonObject("title") { putJsonObject("connections") {
