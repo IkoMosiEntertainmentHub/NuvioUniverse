@@ -85,29 +85,31 @@ fun DetailPosterRailSection(
                     localizedBackdrop.url?.let { item.copy(banner = it) } ?: item
                 }
                 Column {
-                HomePosterCard(
-                    item = cardItem,
-                    useLandscapeBackdropMode = landscape,
-                    showLandscapeOverlay = false,
-                    isWatched = WatchingState.isPosterWatched(
-                        watchedKeys = watchedKeys,
-                        item = item,
-                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    ),
-                    onClick = onPosterClick?.let { { it(item) } },
-                    onLongClick = onPosterLongClick?.let { { it(item) } },
-                )
-                itemSubtitle?.invoke(item)?.let { subtitle ->
-                    Text(
-                        text = subtitle,
-                        modifier = Modifier.width(if (landscape) landscapePosterWidth(posterCardStyle.widthDp) else posterCardStyle.widthDp.dp)
-                            .padding(top = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                    HomePosterCard(
+                        item = cardItem,
+                        useLandscapeBackdropMode = landscape,
+                        showLandscapeOverlay = false,
+                        isWatched = WatchingState.isPosterWatched(
+                            watchedKeys = watchedKeys,
+                            item = item,
+                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        ),
+                        onClick = onPosterClick?.let { { it(item) } },
+                        onLongClick = onPosterLongClick?.let { { it(item) } },
                     )
-                }
+                    itemSubtitle?.invoke(item)?.let { subtitle ->
+                        Text(
+                            text = subtitle,
+                            modifier = Modifier.width(
+                                if (landscape) landscapePosterWidth(posterCardStyle.widthDp)
+                                else posterCardStyle.widthDp.dp,
+                            ).padding(top = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
