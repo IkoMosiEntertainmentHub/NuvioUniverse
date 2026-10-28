@@ -1,6 +1,6 @@
 # Universe implementation and builds
 
-Nuvio Universe is a personal Android ARM64 version of Nuvio Mobile, with focused improvements prepared separately for upstream review.
+Nuvio Universe is a personal Android ARMv7 and ARM64 version of Nuvio Mobile, with focused improvements prepared separately for upstream review.
 
 ## Detail sections
 
@@ -26,7 +26,7 @@ Sort by oldest air date (default), newest air date, or IMDb vote count. Choose l
 
 Run `python3 scripts/configure-universe.py` before building. It obtains only Nuvio's public anon/publishable client configuration and performs a read-only endpoint check. Private account credentials and service-role keys are never build inputs. TMDB/MDBList can use the existing runtime configuration paths.
 
-The **Universe ARM64** workflow runs tests and builds an optimized release artifact. Without signing secrets, that APK is unsigned for offline signing. It must be signed and verified before publishing as an installable release.
+The **Universe Android ARM** workflow runs tests and builds an optimized release artifact. Without signing secrets, that APK is unsigned for offline signing. It must be signed and verified before publishing as an installable release.
 
 For workflow signing, configure these repository secrets privately:
 
@@ -43,7 +43,7 @@ Personal version names are read from `universe-version.properties`. Build number
 
 Current planned release: **0.6.5-beta-NuvioUniverse-1.0.0 (148)**.
 
-Publish signed ARM64 APKs on [Nuvio Universe Releases](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases), with additions, fixes, installation changes and actual validation results. Earlier ephemeral-key debug APKs have a separate identity from production builds.
+Publish signed ARMv7 and ARM64 APKs on [Nuvio Universe Releases](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases), with additions, fixes, installation changes and actual validation results. Earlier ephemeral-key debug APKs have a separate identity from production builds.
 
 ## Updating upstream
 

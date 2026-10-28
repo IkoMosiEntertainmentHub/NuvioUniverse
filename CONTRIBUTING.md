@@ -20,7 +20,7 @@ For app changes, also build the Android app and describe real-device checks sepa
 
 ## Personal builds
 
-Use `cmp-rewrite` for the personal version. Retain the separate app identity, this repository's update feed and ARM64 packaging. Keep the official build number and increment the personal version when releasing personal changes. Production updates must reuse the same private signing key.
+Use `cmp-rewrite` for the personal version. Retain the separate app identity, this repository's update feed and ARMv7/ARM64 packaging. Keep the official build number and increment the personal version when releasing personal changes. Production updates must reuse the same private signing key.
 
 ## Official Nuvio contributions
 

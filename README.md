@@ -14,7 +14,7 @@ Explore connected movies and series while keeping the Nuvio experience you alrea
 
 **Nuvio Universe** is IkoMosiEntertainmentHub's personal version of Nuvio Mobile and a workspace for developing improvements that can be proposed to the official project.
 
-It is based on [Nuvio Mobile](https://github.com/NuvioMedia/NuvioMobile), built with Kotlin and Compose Multiplatform. The original project and its contributors retain credit for the app. This repository provides personal Android ARM64 builds; proposed upstream changes are kept on a separate, focused branch.
+It is based on [Nuvio Mobile](https://github.com/NuvioMedia/NuvioMobile), built with Kotlin and Compose Multiplatform. The original project and its contributors retain credit for the app. This repository provides personal Android ARMv7 and ARM64 builds; proposed upstream changes are kept on a separate, focused branch.
 
 ## What Universe adds
 
@@ -38,9 +38,9 @@ Owner-supplied screenshots from an earlier working debug build. They show Univer
 
 ## Downloads and versioning
 
-**Status: preview. The first signed release is being prepared.** Published, installable APKs will be listed on [this repository's Releases page](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases). Development artifacts are available through Actions; unsigned release artifacts need signing before installation.
+**Status: preview. The first signed release is being prepared.** Published, installable APKs will be listed on [this repository's Releases page](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases). Choose `arm64-v8a` for a 64-bit ARM device or `armeabi-v7a` for a 32-bit ARM device. Development artifacts are available through Actions; unsigned release artifacts need signing before installation.
 
-Personal builds target **Android arm64-v8a** and use a separate app identity from official Nuvio. Earlier debug builds also have a separate identity.
+Personal builds target **Android armeabi-v7a (ARMv7) and arm64-v8a (ARM64)** and use a separate app identity from official Nuvio. Earlier debug builds also have a separate identity.
 
 Version format:
 

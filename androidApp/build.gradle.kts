@@ -72,7 +72,7 @@ android {
         versionCode = releaseAppVersionCode
         versionName = releaseAppVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk { abiFilters += "arm64-v8a" }
+        ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a") }
     }
 
     flavorDimensions += "distribution"
@@ -112,8 +112,10 @@ android {
 
     splits {
         abi {
-            // One APK, with only arm64-v8a native libraries from defaultConfig.
-            isEnable = false
+            // Separate small release APKs; keep one combined APK for debug testing.
+            isEnable = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+            reset()
+            include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = false
         }
     }
