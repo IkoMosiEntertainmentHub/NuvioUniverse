@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import kotlin.uuid.ExperimentalUuidApi
@@ -138,9 +139,8 @@ object AuthRepository {
     }
 
     /** Explicit sign-in must replace local guest mode, even if the session flow emitted first. */
-    internal fun acceptRemoteSignIn() {
-        val session = SupabaseProvider.client.auth.currentSessionOrNull() ?: return
-        val user = session.user ?: return
+    internal fun acceptRemoteSignIn(session: UserSession? = SupabaseProvider.client.auth.currentSessionOrNull()) {
+        val user = session?.user ?: return
         if (user.id.isBlank()) return
         AuthStorage.clearAnonymousUserId()
         _state.value = AuthState.Authenticated(userId = user.id, email = user.email, isAnonymous = false)
