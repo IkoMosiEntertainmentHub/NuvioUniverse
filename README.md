@@ -42,7 +42,7 @@ Owner-supplied screenshots from the latest personal release, provided on 28 Octo
 
 ## Downloads and versioning
 
-**Public beta available: [0.6.5-beta-NuvioUniverse-1.0.0 (148)](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases/tag/0.6.5-beta-NuvioUniverse-1.0.0).** Download the signed APKs from the release assets. Choose `arm64-v8a` for a 64-bit ARM device or `armeabi-v7a` for a 32-bit ARM device. Development artifacts are available through Actions; unsigned release artifacts need signing before installation.
+**Public release available: [Latest release](https://github.com/IkoMosiEntertainmentHub/NuvioUniverse/releases/latest).** Download the signed APKs from the release assets. Choose `arm64-v8a` for a 64-bit ARM device or `armeabi-v7a` for a 32-bit ARM device. Development artifacts are available through Actions; unsigned release artifacts need signing before installation.
 
 Personal builds target **Android armeabi-v7a (ARMv7) and arm64-v8a (ARM64)** and use a separate app identity from official Nuvio. Earlier debug builds also have a separate identity.
 
