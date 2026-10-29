@@ -6,6 +6,15 @@ import kotlinx.serialization.json.jsonObject
 import kotlin.test.*
 
 class UniverseConfigurationTest {
+    @Test fun `empty or fully filtered universes do not create an outer padded section`() {
+        val meta = MetaDetails("tt1", "movie", "Title")
+        assertFalse(hasVisibleUniverse(meta, emptyList(), UniverseConfiguration(), "2026-10-29"))
+        val future = UniverseConnection(MetaPreview("tt2", "movie", "Future", rawReleaseDate = "2028-01-01"), listOf("Spin-off"))
+        assertFalse(hasVisibleUniverse(meta, listOf(future), UniverseConfiguration(hideUnreleased = true), "2026-10-29"))
+        assertTrue(hasVisibleUniverse(meta, listOf(future), UniverseConfiguration(), "2026-10-29"))
+        assertFalse(supportedClearLogo("https://example.org/logo.jpg"))
+        assertTrue(supportedClearLogo("https://image.tmdb.org/t/p/w500/clear.png"))
+    }
     private fun title(id: String, relations: List<String>, date: String? = null, status: String? = null) =
         UniverseConnection(MetaPreview(id, "movie", id, rawReleaseDate = date, status = status), relations)
 

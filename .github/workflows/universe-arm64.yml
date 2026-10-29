@@ -1,6 +1,11 @@
 name: Universe Android ARM
 
 on:
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
   push:
     branches: [cmp-rewrite, universe-arm64, universe-discovery-controls]
   pull_request:
@@ -57,7 +62,7 @@ jobs:
           python3 scripts/configure-universe.py
           python3 scripts/test_configure_universe.py
       - name: Test shared Android code
-        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.UniverseRepositoryTest' --tests 'com.nuvio.app.features.details.UniverseSettingsTest' --tests 'com.nuvio.app.features.details.UniverseConfigurationTest' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.details.RatingsSettingsTest' --tests 'com.nuvio.app.features.updater.*Test' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
+        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.*Test' --tests 'com.nuvio.app.features.player.skip.*Test' --tests 'com.nuvio.app.features.home.components.*Test' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.updater.*Test' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Build ARMv7 and ARM64 APKs
         env:
           RELEASE: ${{ inputs.release || false }}

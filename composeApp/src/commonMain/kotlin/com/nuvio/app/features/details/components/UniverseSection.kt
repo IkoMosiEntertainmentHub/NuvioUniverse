@@ -79,6 +79,7 @@ internal fun UniverseSection(
                 horizontalScrollPadding = horizontalScrollPadding,
                 sourceLabel = "IMDb / TMDB · explicit connections; alternate continuities stay labelled",
                 itemSubtitle = { subtitles[it.id] },
+                relationshipAboveTitle = true,
                 landscapeOverride = options.universePosterStyle == UniversePosterStyle.Landscape,
                 waitForBackdrop = false, onPosterClick = onPosterClick,
             )

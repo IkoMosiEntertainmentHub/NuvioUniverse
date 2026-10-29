@@ -127,6 +127,7 @@ fun NuvioPosterCard(
     fallbackImageUrl: String? = null,
     shape: NuvioPosterShape = NuvioPosterShape.Poster,
     detailLine: String? = null,
+    labelAboveTitle: String? = null,
     showTitleBelow: Boolean = true,
     bottomLeftLogoUrl: String? = null,
     bottomLeftText: String? = null,
@@ -246,6 +247,10 @@ fun NuvioPosterCard(
             NuvioPosterWatchedOverlay(isWatched = isWatched)
         }
         if (shouldShowTitleBelow) {
+            if (!labelAboveTitle.isNullOrBlank()) {
+                Text(text = labelAboveTitle, style = MaterialTheme.typography.labelSmall,
+                    color = tokens.colors.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,

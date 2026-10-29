@@ -2,35 +2,48 @@ package com.nuvio.app.features.player.skip
 
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbService
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Clock
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
 object SkipIntroRepository {
 
-    private val cache = HashMap<String, List<SkipInterval>>()
+    private val cache = linkedMapOf<String, Pair<Long, List<SkipInterval>>>()
+    private val cacheGate = SynchronizedObject()
+    private fun cached(key: String): List<SkipInterval>? = synchronized(cacheGate) {
+        cache[key]?.takeIf { Clock.System.now().toEpochMilliseconds() - it.first < 15 * 60_000 }?.second
+    }
+    private fun remember(key: String, intervals: List<SkipInterval>): List<SkipInterval> = synchronized(cacheGate) {
+        cache[key] = Clock.System.now().toEpochMilliseconds() to intervals
+        while (cache.size > 128) cache.remove(cache.keys.first())
+        intervals
+    }
     private val animeSkipShowIdCache = HashMap<String, String>()
     private const val NO_ID = "__none__"
 
     private val introDbConfigured: Boolean
-        get() = IntroDbConfig.URL.isNotBlank()
+        get() = true // Public read endpoint is available without an account or API key.
 
     suspend fun getMovieSkipIntervals(
         contentId: String?,
         videoId: String?,
         requireSkipIntroEnabled: Boolean = true,
+        durationMs: Long? = null,
     ): List<SkipInterval> {
-        if (!introDbConfigured ||
-            (requireSkipIntroEnabled && !PlayerSettingsRepository.uiState.value.skipIntroEnabled)
-        ) return emptyList()
+        if (requireSkipIntroEnabled && !PlayerSettingsRepository.uiState.value.skipIntroEnabled) return emptyList()
         val imdbId = resolveMovieSkipImdbId(
             contentId, videoId,
             resolveTmdb = { TmdbService.tmdbToImdb(it, "movie") },
             resolveAnime = { source, id -> SimklIdResolver.resolveIds(source, id)?.imdb },
         ) ?: return emptyList()
-        val cacheKey = "movie:$imdbId"
-        cache[cacheKey]?.let { return it }
-        val data = SkipIntroApi.getIntroDbMovieSegments(imdbId) ?: return emptyList()
-        return data.movieSkipIntervals().also { cache[cacheKey] = it }
+        val cacheKey = "movie:$imdbId:${durationMs?.div(1000)}"
+        cached(cacheKey)?.let { return it }
+        val primary = withTimeoutOrNull(8_000) { SkipIntroApi.getIntroDbMovieSegments(imdbId)?.movieSkipIntervals() }.orEmpty()
+        return remember(cacheKey, SkipFallbackApi.complete(primary, imdbId, durationMs = durationMs))
     }
 
     suspend fun getSkipIntervals(
@@ -38,16 +51,17 @@ object SkipIntroRepository {
         season: Int,
         episode: Int,
         requireSkipIntroEnabled: Boolean = true,
+        durationMs: Long? = null,
     ): List<SkipInterval> = coroutineScope {
         if (imdbId == null) return@coroutineScope emptyList()
         val settings = PlayerSettingsRepository.uiState.value
         if (requireSkipIntroEnabled && !settings.skipIntroEnabled) return@coroutineScope emptyList()
 
-        val cacheKey = "$imdbId:$season:$episode"
-        cache[cacheKey]?.let { return@coroutineScope it }
+        val cacheKey = "$imdbId:$season:$episode:${durationMs?.div(1000)}"
+        cached(cacheKey)?.let { return@coroutineScope it }
 
         val introDbDeferred = async {
-            if (introDbConfigured) fetchFromIntroDb(imdbId, season, episode) else emptyList()
+            if (introDbConfigured) fetchFromIntroDb(imdbId, season, episode, durationMs) else emptyList()
         }
         // Resolve IMDB -> season-specific MAL/AniList via Simkl full_anime_seasons
         val simklIdsDeferred = async { SimklIdResolver.resolveIdsForImdbEpisode(imdbId, season, episode) }
@@ -74,13 +88,14 @@ object SkipIntroRepository {
             introDbDeferred.await(),
             animeSkipDeferred.await(),
             aniSkipDeferred.await(),
-        ).also { cache[cacheKey] = it }
+        ).also { remember(cacheKey, it) }
     }
 
     suspend fun getSkipIntervalsForMal(
         malId: String,
         episode: Int,
         requireSkipIntroEnabled: Boolean = true,
+        durationMs: Long? = null,
         imdbId: String? = null,
         imdbSeason: Int? = null,
         imdbEpisode: Int? = null,
@@ -88,8 +103,8 @@ object SkipIntroRepository {
         val settings = PlayerSettingsRepository.uiState.value
         if (requireSkipIntroEnabled && !settings.skipIntroEnabled) return@coroutineScope emptyList()
 
-        val cacheKey = "mal:$malId:$episode"
-        cache[cacheKey]?.let { return@coroutineScope it }
+        val cacheKey = "mal:$malId:$episode:${durationMs?.div(1000)}"
+        cached(cacheKey)?.let { return@coroutineScope it }
 
         val aniSkipDeferred = async { fetchFromAniSkip(malId, episode) }
 
@@ -108,11 +123,11 @@ object SkipIntroRepository {
         if (resolvedImdbId != null) {
             val tvdb = tvdbDeferred.await()
             val introDbSeason = imdbSeason ?: tvdb?.first ?: return@coroutineScope run {
-                mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { cache[cacheKey] = it }
+                mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { remember(cacheKey, it) }
             }
             val introDbEpisode = imdbEpisode ?: tvdb?.second ?: episode
             val introDbDeferred = async {
-                if (introDbConfigured) fetchFromIntroDb(resolvedImdbId, introDbSeason, introDbEpisode) else emptyList()
+                if (introDbConfigured) fetchFromIntroDb(resolvedImdbId, introDbSeason, introDbEpisode, durationMs) else emptyList()
             }
             val anilistId = simklIds?.anilist
             val animeSkipDeferred = async {
@@ -125,13 +140,14 @@ object SkipIntroRepository {
             if (anilistId != null) animeSkip = fetchFromAnimeSkip(anilistId, episode, season = null)
         }
 
-        return@coroutineScope mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { cache[cacheKey] = it }
+        return@coroutineScope mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { remember(cacheKey, it) }
     }
 
     suspend fun getSkipIntervalsForKitsu(
         kitsuId: String,
         episode: Int,
         requireSkipIntroEnabled: Boolean = true,
+        durationMs: Long? = null,
         imdbId: String? = null,
         imdbSeason: Int? = null,
         imdbEpisode: Int? = null,
@@ -139,8 +155,8 @@ object SkipIntroRepository {
         val settings = PlayerSettingsRepository.uiState.value
         if (requireSkipIntroEnabled && !settings.skipIntroEnabled) return@coroutineScope emptyList()
 
-        val cacheKey = "kitsu:$kitsuId:$episode"
-        cache[cacheKey]?.let { return@coroutineScope it }
+        val cacheKey = "kitsu:$kitsuId:$episode:${durationMs?.div(1000)}"
+        cached(cacheKey)?.let { return@coroutineScope it }
 
         val simklIdsDeferred = async { SimklIdResolver.resolveIds("kitsu", kitsuId) }
         val simklIds = simklIdsDeferred.await()
@@ -162,11 +178,11 @@ object SkipIntroRepository {
         if (resolvedImdbId != null) {
             val tvdb = tvdbDeferred.await()
             val introDbSeason = imdbSeason ?: tvdb?.first ?: return@coroutineScope run {
-                mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { cache[cacheKey] = it }
+                mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { remember(cacheKey, it) }
             }
             val introDbEpisode = imdbEpisode ?: tvdb?.second ?: episode
             val introDbDeferred = async {
-                if (introDbConfigured) fetchFromIntroDb(resolvedImdbId, introDbSeason, introDbEpisode) else emptyList()
+                if (introDbConfigured) fetchFromIntroDb(resolvedImdbId, introDbSeason, introDbEpisode, durationMs) else emptyList()
             }
             val anilistId = simklIds?.anilist
             val animeSkipDeferred = async {
@@ -179,28 +195,17 @@ object SkipIntroRepository {
             if (anilistId != null) animeSkip = fetchFromAnimeSkip(anilistId, episode, season = null)
         }
 
-        return@coroutineScope mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { cache[cacheKey] = it }
+        return@coroutineScope mergeByPriority(introDb, animeSkip, aniSkipDeferred.await()).also { remember(cacheKey, it) }
     }
 
-    private fun mergeByPriority(vararg providerResults: List<SkipInterval>): List<SkipInterval> {
-        val chosen = LinkedHashMap<String, SkipInterval>()
-        for (result in providerResults) {
-            for (interval in result) {
-                val category = segmentCategory(interval.type) ?: continue
-                if (category !in chosen) chosen[category] = interval
-            }
-        }
-        return chosen.values.toList()
+    private fun mergeByPriority(vararg providerResults: List<SkipInterval>): List<SkipInterval> = mergeSkipProviders(*providerResults)
+
+    private suspend fun fetchFromIntroDb(imdbId: String, season: Int, episode: Int, durationMs: Long?): List<SkipInterval> {
+        val primary = withTimeoutOrNull(8_000) { fetchPrimaryIntroDb(imdbId, season, episode) }.orEmpty()
+        return SkipFallbackApi.complete(primary, imdbId, season, episode, durationMs)
     }
 
-    private fun segmentCategory(type: String): String? = when (type.lowercase()) {
-        "intro", "op", "mixed-op" -> "opening"
-        "outro", "ed", "mixed-ed", "credits", "ending" -> "ending"
-        "recap" -> "recap"
-        else -> null
-    }
-
-    private suspend fun fetchFromIntroDb(imdbId: String, season: Int, episode: Int): List<SkipInterval> {
+    private suspend fun fetchPrimaryIntroDb(imdbId: String, season: Int, episode: Int): List<SkipInterval> {
         return try {
             val data = SkipIntroApi.getIntroDbSegments(imdbId, season, episode)
             if (data == null) return emptyList()
@@ -208,8 +213,9 @@ object SkipIntroRepository {
                 data.intro.toSkipIntervalOrNull("intro"),
                 data.recap.toSkipIntervalOrNull("recap"),
                 data.outro.toSkipIntervalOrNull("outro"),
+                data.postCredits.toSkipIntervalOrNull("post-credits"),
             )
-        } catch (_: Exception) {
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {
             emptyList()
         }
     }
@@ -218,7 +224,7 @@ object SkipIntroRepository {
         if (this == null) return null
         val start = startSec ?: startMs?.let { it / 1000.0 }
         val end = endSec ?: endMs?.let { it / 1000.0 }
-        if (start == null || end == null || end <= start) return null
+        if (start == null || end == null || !start.isFinite() || !end.isFinite() || start < 0 || end <= start) return null
         return SkipInterval(startTime = start, endTime = end, type = type, provider = "introdb")
     }
 
@@ -235,7 +241,7 @@ object SkipIntroRepository {
                     provider = "aniskip",
                 )
             } ?: emptyList()
-        } catch (_: Exception) {
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {
             emptyList()
         }
     }
@@ -274,7 +280,7 @@ object SkipIntroRepository {
                 if (result.isNotEmpty()) return result
             }
             emptyList()
-        } catch (_: Exception) {
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {
             emptyList()
         }
     }
@@ -325,7 +331,7 @@ object SkipIntroRepository {
     }
 
     fun clearCache() {
-        cache.clear()
+        synchronized(cacheGate) { cache.clear() }
         animeSkipShowIdCache.clear()
         SimklIdResolver.clearCache()
     }

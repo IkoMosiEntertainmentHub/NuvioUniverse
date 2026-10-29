@@ -34,3 +34,19 @@ python scripts/universe_version.py install-hooks
 If Python is not on PATH, set `git config nuvio.python /absolute/path/to/python`. The guard increments and stages only the ledger for personal content commits. The official-update helper preserves the ledger and checks build wiring after merging. CI checks monotonic versioning, build composition and a real temporary-repository official merge followed by a personal commit. No setup can protect against deliberately deleting the guard/ledger or bypassing CI; branch review must retain these files when resolving conflicts.
 
 Validation is recorded in the associated Actions run. Physical-device UI, authentication and playback testing is additional to host tests and APK compilation. The existing official PR remains a separate focused proposal and is not changed by these personal-fork features.
+
+## Details, financials and skip fallback
+
+Empty/fully filtered Universe results are removed from the outer lazy details list, including its padding. New settings use portrait posters; existing saved choices are preserved. Universe relationship labels appear between artwork and title, followed by year. Landscape cards use their known release year. Custom artwork source selection and screen controls are unchanged.
+
+Appearance → Compact movie/show details uses a two-column grid and retains an independent persistent preference. The scrolling header uses a transparent panel and requests a TMDB clear-logo image; a text title remains the fallback.
+
+Financials expands within movie/show details and has Production budget and Box office history tabs. Box Office Archive's ID lookup and `movies/{id}.json` provide reported USD totals and dated domestic daily/weekly/weekend series. Historical snapshots are labelled and are not replaced with a different current snapshot. Missing values are unknown. TMDB budget/revenue is a fallback when the archive title is unavailable. Wikidata's sourced production-cost statements may provide movie/episode/season/series figures; episode subtotals exclude mixed currencies, duplicate conflicting claims and aggregate costs, and remain explicitly incomplete. No streaming revenue, studio share, marketing cost, break-even or actual profit is invented. Gross minus budget and the budget multiple are preliminary comparisons only.
+
+Sources: [Box Office Archive API](https://boxofficehistory.com/api), [TMDB](https://developer.themoviedb.org/reference/movie-details), [Wikidata Query Service](https://query.wikidata.org/).
+
+Skip reads use IntroDB first, then SkipDB for each missing category, then TheIntroDB v4 for remaining gaps. Valid primary markers and explicit confirmed-absence results are retained. Uncertain/out-of-range, invalid and beyond-duration fallback markers are rejected. Separated credits stay separate. IntroDB post-credit scenes are retained as non-skippable boundaries. The providers do not all distinguish an ending sequence from end credits; the app keeps the provider's contextual marker rather than fabricating separate timestamps.
+
+[IntroDB](https://introdb.app/docs), [SkipDB API and ODbL reciprocity terms](https://skipdb.tv/docs), [TheIntroDB v4](https://theintrodb.org/docs). These integrations only read fallback data; they do not submit timestamps or create provider accounts.
+
+`.github/workflows/universe-release.yml` runs the signed reusable build and publishes with the repository's `GITHUB_TOKEN`, making GitHub Actions the release author. Use a `release:` commit message when bumping the personal ledger, or dispatch Publish NuvioUniverse Release. The four persistent UNIVERSE signing secrets must be configured once; missing secrets stop the job before any unsigned release can be published. The release classification property controls the GitHub flag independently of upstream's version label.

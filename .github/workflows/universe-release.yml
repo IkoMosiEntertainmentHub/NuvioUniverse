@@ -1,0 +1,62 @@
+name: Publish NuvioUniverse Release
+
+on:
+  push:
+    branches: [cmp-rewrite]
+    paths: [universe-version.properties]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: universe-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'IkoMosiEntertainmentHub/NuvioUniverse' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:'))
+    uses: ./.github/workflows/universe-arm64.yml
+    with:
+      release: true
+    secrets: inherit
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: nuvio-universe-arm-apks-*
+          path: release-apks
+          merge-multiple: true
+      - name: Prepare signed APK names, checksums and release notes
+        id: metadata
+        run: |
+          version=$(python3 scripts/universe_version.py show)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          mkdir publish
+          for abi in armeabi-v7a arm64-v8a; do
+            mapfile -t files < <(find release-apks -name "*${abi}*.apk")
+            test "${#files[@]}" -eq 1
+            cp "${files[0]}" "publish/${version}-${abi}.apk"
+          done
+          (cd publish && sha256sum *.apk > SHA256SUMS.txt)
+          cp releases/universe-latest.md publish/NOTES.md
+          printf '\nBuild and tests: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> publish/NOTES.md
+      - name: Publish through GitHub Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          classification=$(sed -n 's/^releaseClassification=//p' universe-version.properties | tr -d '\r')
+          flags=(--latest)
+          if [ "$classification" = prerelease ]; then flags=(--prerelease --latest=false); fi
+          gh release create "$RELEASE_VERSION" publish/*.apk publish/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" --title "$RELEASE_VERSION" --notes-file publish/NOTES.md \
+            --generate-notes "${flags[@]}"

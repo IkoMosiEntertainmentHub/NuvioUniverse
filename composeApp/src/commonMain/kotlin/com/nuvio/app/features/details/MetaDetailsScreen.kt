@@ -204,6 +204,10 @@ fun MetaDetailsScreen(
         MetaScreenSettingsRepository.ensureLoaded()
         MetaScreenSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
+    val universeLoadStates by UniverseRepository.states.collectAsStateWithLifecycle()
+    LaunchedEffect(displayedMeta?.id, displayedMeta?.imdbId, metaScreenSettingsUiState.items) {
+        displayedMeta?.let { UniverseRepository.prefetch(it) }
+    }
     val mdbListSettings by remember {
         MdbListSettingsRepository.ensureLoaded()
         MdbListSettingsRepository.uiState
@@ -1216,6 +1220,8 @@ fun MetaDetailsScreen(
                                 }
 
                                 configuredMetaSectionItems(
+                                    hasUniverseSection = hasVisibleUniverse(meta, universeLoadStates[UniverseRepository.key(meta)]?.items.orEmpty(),
+                                        metaScreenSettingsUiState.universeConfiguration, CurrentDateProvider.todayIsoDate()),
                                     settings = if (useTabletLayout) {
                                         metaScreenSettingsUiState.copy(
                                             items = metaScreenSettingsUiState.items.filterNot { it.key in tabletHeroSectionKeys },
@@ -1912,6 +1918,7 @@ private fun MetaDetails.toMetaPreview(): MetaPreview =
     )
 
 private fun LazyListScope.configuredMetaSectionItems(
+    hasUniverseSection: Boolean,
     settings: MetaScreenSettingsUiState,
     isMdbListActive: Boolean,
     meta: MetaDetails,
@@ -1969,7 +1976,7 @@ private fun LazyListScope.configuredMetaSectionItems(
 ) {
     val enabledItems = settings.items.filter { it.enabled }
     fun sectionHasContent(key: MetaScreenSectionKey): Boolean =
-        metaSectionHasContent(
+        if (key == MetaScreenSectionKey.UNIVERSE) hasUniverseSection else metaSectionHasContent(
             key = key,
             meta = meta,
             hasProductionSection = hasProductionSection,

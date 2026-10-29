@@ -77,3 +77,8 @@ internal fun establishedTitle(name: String): Boolean = name.isNotBlank() &&
 
 internal fun universeEnabled(meta: MetaDetails, configuration: UniverseConfiguration): Boolean =
     configuration.selections.none { !it.enabled && (it.id == meta.id || it.id == meta.imdbId || it.tmdbId == meta.id) }
+
+internal fun hasVisibleUniverse(meta: MetaDetails, items: List<UniverseConnection>, configuration: UniverseConfiguration, today: String): Boolean =
+    universeEnabled(meta, configuration) && (
+        visibleUniverseConnections(items, configuration, today).isNotEmpty() ||
+            configuration.franchiseCollections && items.any { !configuration.hideUnreleased || it.isReleased(today) })

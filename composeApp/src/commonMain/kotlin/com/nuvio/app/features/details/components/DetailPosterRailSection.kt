@@ -45,6 +45,7 @@ fun DetailPosterRailSection(
     horizontalScrollPadding: Dp = 0.dp,
     sourceLabel: String? = null,
     itemSubtitle: ((MetaPreview) -> String?)? = null,
+    relationshipAboveTitle: Boolean = false,
     landscapeOverride: Boolean? = null,
     waitForBackdrop: Boolean = true,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
@@ -92,6 +93,7 @@ fun DetailPosterRailSection(
                         useLandscapeBackdropMode = landscape,
                         landscapeOverride = landscapeOverride,
                         showLandscapeOverlay = false,
+                        labelAboveTitle = if (relationshipAboveTitle) itemSubtitle?.invoke(item) else null,
                         isWatched = WatchingState.isPosterWatched(
                             watchedKeys = watchedKeys,
                             item = item,
@@ -100,7 +102,7 @@ fun DetailPosterRailSection(
                         onClick = onPosterClick?.let { { it(item) } },
                         onLongClick = onPosterLongClick?.let { { it(item) } },
                     )
-                    itemSubtitle?.invoke(item)?.let { subtitle ->
+                    itemSubtitle?.invoke(item)?.takeUnless { relationshipAboveTitle }?.let { subtitle ->
                         Text(
                             text = subtitle,
                             modifier = Modifier.width(

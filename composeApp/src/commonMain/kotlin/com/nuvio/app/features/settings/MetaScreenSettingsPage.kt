@@ -137,6 +137,9 @@ internal fun LazyListScope.metaScreenSettingsContent(
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(title = "Compact movie/show details", description = "Use a two-column information grid.",
+                    checked = uiState.compactDetails, isTablet = isTablet,
+                    onCheckedChange = MetaScreenSettingsRepository::setCompactDetails)
                 SettingsChipRow(
                     title = stringResource(Res.string.settings_meta_background_mode),
                     description = stringResource(Res.string.settings_meta_background_mode_description),

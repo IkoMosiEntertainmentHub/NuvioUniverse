@@ -26,6 +26,28 @@ internal object ProductionDiscovery {
     private val requests = Semaphore(4)
     private val verifiedCache = linkedMapOf<String, Pair<Long, UniverseConnection>>()
     private val cacheGate = Mutex()
+    private val logoCache = linkedMapOf<String, String?>()
+
+    suspend fun clearLogo(meta: MetaDetails): String? {
+        val key = "${meta.type}:${meta.id}"
+        cacheGate.withLock { if (key in logoCache) return logoCache[key] }
+        val fallback = meta.logo?.takeIf(::supportedClearLogo)
+        val result = try {
+            val id = TmdbService.ensureTmdbId(meta.id, meta.type, meta.imdbId)
+            if (id == null) fallback else {
+                val language = TmdbSettingsRepository.snapshot().language.substringBefore('-')
+                val logos = fetch("${TmdbService.normalizeMediaType(meta.type)}/$id/images", mapOf("include_image_language" to "$language,en,null"))["logos"] as? JsonArray
+                logos.orEmpty().mapNotNull { it as? JsonObject }.sortedByDescending { it.text("iso_639_1") == language }
+                    .mapNotNull { it.text("file_path") }.firstOrNull { supportedClearLogo("https://image.tmdb.org/t/p/w500$it") }
+                    ?.let { "https://image.tmdb.org/t/p/w500$it" } ?: fallback
+            }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) { fallback }
+        cacheGate.withLock {
+            logoCache[key] = result
+            while (logoCache.size > 64) logoCache.remove(logoCache.keys.first())
+        }
+        return result
+    }
 
     private suspend fun fetch(endpoint: String, query: Map<String, String> = emptyMap()): JsonObject = requests.withPermit {
         withTimeout(12_000) {
@@ -100,6 +122,9 @@ internal object ProductionDiscovery {
 
 internal fun characterMatches(role: String, query: String): Boolean = query.trim().length >= 2 &&
     role.split(" / ", "/", "(").any { it.trim().contains(query.trim(), ignoreCase = true) }
+
+internal fun supportedClearLogo(url: String): Boolean = url.startsWith("https://") &&
+    url.substringBefore('?').let { it.endsWith(".png", true) || it.endsWith(".webp", true) }
 
 internal fun sharedCastCredits(left: List<CreditProduction>, right: List<CreditProduction>): List<MetaPreview> {
     val keys = right.map { "${it.item.type}:${it.item.id}" }.toSet()

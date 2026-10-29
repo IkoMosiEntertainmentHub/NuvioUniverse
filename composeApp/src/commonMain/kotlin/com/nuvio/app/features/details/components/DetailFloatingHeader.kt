@@ -26,6 +26,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.produceState
+import com.nuvio.app.features.details.ProductionDiscovery
+import com.nuvio.app.features.details.supportedClearLogo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -64,12 +67,10 @@ fun DetailFloatingHeader(
     }
     val headerTopPadding = (safeAreaTop - 6.dp).coerceAtLeast(safeAreaTop * 0.8f)
     val interactive = progress > 0.05f
-    val surfaceColor = backgroundColor ?: if (isIos) {
-        MaterialTheme.colorScheme.surface.copy(alpha = 1.0f)
-    } else {
-        MaterialTheme.colorScheme.background
+    val clearLogo by produceState(meta.logo?.takeIf(::supportedClearLogo), meta.id, meta.logo) {
+        value = ProductionDiscovery.clearLogo(meta)
     }
-    var logoLoadError by remember(meta.id, meta.logo) {
+    var logoLoadError by remember(meta.id, clearLogo) {
         mutableStateOf(false)
     }
 
@@ -79,7 +80,7 @@ fun DetailFloatingHeader(
             .graphicsLayer {
                 alpha = progress
                 translationY = lerp((-20).dp, 0.dp, progress).toPx()
-                shadowElevation = 4.dp.toPx()
+                shadowElevation = 0f
                 shape = RectangleShape
             },
     ) {
@@ -89,7 +90,7 @@ fun DetailFloatingHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
-                .background(surfaceColor),
+                .background(Color.Transparent),
         ) {
             Row(
                 modifier = Modifier
@@ -122,9 +123,9 @@ fun DetailFloatingHeader(
                         .padding(horizontal = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (!meta.logo.isNullOrBlank() && !logoLoadError) {
+                    if (!clearLogo.isNullOrBlank() && !logoLoadError) {
                         AsyncImage(
-                            model = meta.logo,
+                            model = clearLogo,
                             contentDescription = stringResource(Res.string.detail_logo_content_description, meta.name),
                             modifier = Modifier
                                 .width(logoWidth)
@@ -152,15 +153,6 @@ fun DetailFloatingHeader(
                 )
             }
 
-            if (isIos) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(0.5.dp)
-                        .background(Color.White.copy(alpha = 0.15f)),
-                )
-            }
         }
     }
 }

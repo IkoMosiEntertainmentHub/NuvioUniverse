@@ -15,7 +15,7 @@ internal object SkipIntroApi {
     // --- IntroDb ---
 
     suspend fun getIntroDbMovieSegments(imdbId: String): IntroDbSegmentsResponse? {
-        val baseUrl = IntroDbConfig.URL.trimEnd('/')
+        val baseUrl = IntroDbConfig.URL.ifBlank { "https://api.introdb.app" }.trimEnd('/')
         if (baseUrl.isBlank()) return null
         return try {
             val text = httpGetText(introDbMovieSegmentsUrl(baseUrl, imdbId))
@@ -32,12 +32,14 @@ internal object SkipIntroApi {
         season: Int,
         episode: Int,
     ): IntroDbSegmentsResponse? {
-        val baseUrl = IntroDbConfig.URL.trimEnd('/')
+        val baseUrl = IntroDbConfig.URL.ifBlank { "https://api.introdb.app" }.trimEnd('/')
         if (baseUrl.isBlank()) return null
         val url = "$baseUrl/segments?imdb_id=$imdbId&season=$season&episode=$episode"
         return try {
             val text = httpGetText(url)
             json.decodeFromString<IntroDbSegmentsResponse>(text)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
@@ -47,7 +49,7 @@ internal object SkipIntroApi {
         apiKey: String,
         request: SubmitIntroRequest,
     ): Boolean {
-        val baseUrl = IntroDbConfig.URL.trimEnd('/')
+        val baseUrl = IntroDbConfig.URL.ifBlank { "https://api.introdb.app" }.trimEnd('/')
         if (baseUrl.isBlank() || apiKey.isBlank()) return false
         val url = "$baseUrl/submit"
         val body = json.encodeToString(SubmitIntroRequest.serializer(), request)
@@ -69,7 +71,7 @@ internal object SkipIntroApi {
     }
 
     suspend fun verifyIntroDbApiKey(apiKey: String): Boolean {
-        val baseUrl = IntroDbConfig.URL.trimEnd('/')
+        val baseUrl = IntroDbConfig.URL.ifBlank { "https://api.introdb.app" }.trimEnd('/')
         if (baseUrl.isBlank() || apiKey.isBlank()) return false
         val url = "$baseUrl/submit"
         val headers = mapOf(
@@ -110,6 +112,8 @@ internal object SkipIntroApi {
         return try {
             val text = httpGetText(url)
             json.decodeFromString<AniSkipResponse>(text)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
@@ -131,6 +135,8 @@ internal object SkipIntroApi {
         return try {
             val text = httpPostJsonWithHeaders(ANIMESKIP_BASE + "graphql", body, headers)
             json.decodeFromString<AnimeSkipGraphqlResponse>(text)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }

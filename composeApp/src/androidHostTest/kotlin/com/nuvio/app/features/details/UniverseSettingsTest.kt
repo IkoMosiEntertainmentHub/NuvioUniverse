@@ -35,10 +35,10 @@ class UniverseSettingsTest {
         assertTrue(MetaScreenSettingsRepository.uiState.value.universeConfiguration.hideUnreleased)
     }
 
-    @Test fun defaultIsOldestFirstWithLandscapePosters() {
+    @Test fun defaultIsOldestFirstWithPortraitPosters() {
         val settings = MetaScreenSettingsRepository.uiState.value
         assertEquals(UniverseSortOrder.AiredOldest, settings.universeSortOrder)
-        assertEquals(UniversePosterStyle.Landscape, settings.universePosterStyle)
+        assertEquals(UniversePosterStyle.Posters, settings.universePosterStyle)
         assertEquals("Universe", settings.items.first { it.key == MetaScreenSectionKey.UNIVERSE }.title)
         val collectionIndex = settings.items.indexOfFirst { it.key == MetaScreenSectionKey.COLLECTION }
         assertEquals(MetaScreenSectionKey.UNIVERSE, settings.items[collectionIndex + 1].key)
@@ -80,7 +80,7 @@ class UniverseSettingsTest {
         MetaScreenSettingsRepository.onProfileChanged()
         val settings = MetaScreenSettingsRepository.uiState.value
         assertEquals(UniverseSortOrder.AiredOldest, settings.universeSortOrder)
-        assertEquals(UniversePosterStyle.Landscape, settings.universePosterStyle)
+        assertEquals(UniversePosterStyle.Posters, settings.universePosterStyle)
         assertTrue(settings.blurUnwatchedEpisodes)
     }
 
@@ -90,6 +90,6 @@ class UniverseSettingsTest {
         MetaScreenSettingsRepository.resetToDefaults()
         MetaScreenSettingsRepository.onProfileChanged()
         assertEquals(UniverseSortOrder.AiredOldest, MetaScreenSettingsRepository.uiState.value.universeSortOrder)
-        assertEquals(UniversePosterStyle.Landscape, MetaScreenSettingsRepository.uiState.value.universePosterStyle)
+        assertEquals(UniversePosterStyle.Posters, MetaScreenSettingsRepository.uiState.value.universePosterStyle)
     }
 }

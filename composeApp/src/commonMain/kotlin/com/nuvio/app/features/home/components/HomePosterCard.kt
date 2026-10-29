@@ -19,6 +19,7 @@ fun HomePosterCard(
     onLongClick: (() -> Unit)? = null,
     showLandscapeOverlay: Boolean = true,
     landscapeOverride: Boolean? = null,
+    labelAboveTitle: String? = null,
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
     val isLandscapeMode = landscapeOverride ?: (useLandscapeBackdropMode || posterCardStyle.catalogLandscapeModeEnabled)
@@ -39,7 +40,9 @@ fun HomePosterCard(
         modifier = modifier,
         fallbackImageUrl = fallbackImageUrl,
         shape = if (isLandscapeMode) NuvioPosterShape.Landscape else item.posterShape.toNuvioPosterShape(),
-        detailLine = if (isLandscapeMode || posterCardStyle.hideLabelsEnabled) null else item.releaseInfo?.let { formatReleaseDateForDisplay(it) },
+        detailLine = if (posterCardStyle.hideLabelsEnabled) null else if (isLandscapeMode)
+            posterYear(item.releaseInfo, item.rawReleaseDate) else item.releaseInfo?.let { formatReleaseDateForDisplay(it) },
+        labelAboveTitle = labelAboveTitle,
         showTitleBelow = !posterCardStyle.hideLabelsEnabled,
         bottomLeftLogoUrl = if (isLandscapeMode && showLandscapeOverlay && effectiveLandscapePoster.isNullOrBlank()) item.logo else null,
         bottomLeftText = if (isLandscapeMode && showLandscapeOverlay && effectiveLandscapePoster.isNullOrBlank() && item.logo.isNullOrBlank() && !posterCardStyle.hideLabelsEnabled) item.name else null,
@@ -48,6 +51,10 @@ fun HomePosterCard(
         onLongClick = onLongClick,
     )
 }
+
+internal fun posterYear(releaseInfo: String?, rawReleaseDate: String?): String? =
+    Regex("\\b(?:18|19|20|21)\\d{2}\\b").find(releaseInfo.orEmpty())?.value
+        ?: rawReleaseDate?.take(4)?.takeIf { it.length == 4 && it.all(Char::isDigit) }
 
 private fun PosterShape.toNuvioPosterShape(): NuvioPosterShape =
     when (this) {

@@ -50,7 +50,7 @@ internal fun IntroDbSegmentsResponse.movieSkipIntervals(): List<SkipInterval> {
     ) {
         credits.copy(endTime = scene.startTime).takeIf { it.endTime > it.startTime }
     } else credits
-    return listOfNotNull(safeCredits, scene)
+    return listOfNotNull(intro.movieIntervalOrNull("intro"), recap.movieIntervalOrNull("recap"), safeCredits, scene)
 }
 
 private fun IntroDbSegment?.movieIntervalOrNull(type: String): SkipInterval? {
