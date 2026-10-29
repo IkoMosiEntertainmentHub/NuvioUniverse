@@ -40,11 +40,13 @@ jobs:
         run: |
           version=$(python3 scripts/universe_version.py show)
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          # GitHub normalizes parentheses in asset names; keep checksums aligned with downloads.
+          asset_version=$(printf '%s' "$version" | tr -d '()')
           mkdir publish
           for abi in armeabi-v7a arm64-v8a; do
             mapfile -t files < <(find release-apks -name "*${abi}*.apk")
             test "${#files[@]}" -eq 1
-            cp "${files[0]}" "publish/${version}-${abi}.apk"
+            cp "${files[0]}" "publish/${asset_version}-${abi}.apk"
           done
           (cd publish && sha256sum *.apk > SHA256SUMS.txt)
           cp releases/universe-latest.md publish/NOTES.md
