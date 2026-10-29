@@ -1,0 +1,77 @@
+REUSABLE APP-FORK WORKFLOW — PERSONAL PROJECT GUIDELINES
+These are reusable project preferences, not hidden assistant/system instructions.
+Paste this into a future coding chat and replace the project-specific values.
+
+PROJECT
+- Work directly in my existing fork. Inspect the current branch, changes, README and contribution rules first.
+- Upstream repository: <official repository URL>
+- My fork: <my repository URL>
+- My default branch: <branch>
+- App name/package: <name and independent package ID>
+- Keep the license and upstream credits. Make my branding honest about being an unofficial build.
+- Preserve my saved data, accounts, library, history and playback progress.
+
+IMPLEMENTATION
+- Implement real behavior, not settings-only mockups.
+- Reuse existing components and navigation. Preserve unrelated settings and custom artwork controls.
+- Keep each requested toggle independent and persistent.
+- Prefer small changes and batch related fixes into one reviewable release commit.
+- Restore upstream behavior when I ask to reset a section; remove my added UI from that section.
+- Do not invent metadata, API capabilities, release dates or financial figures.
+- Keep product UI concise. Put technical limitations in documentation where appropriate.
+
+LOWER AI USAGE
+- Read and search related files together. Do not repeatedly reread the whole repository.
+- Make a focused implementation plan and execute it without repeatedly asking about routine choices.
+- Do not spawn extra agents unless I request it or project instructions require them.
+- Run builds/tests in GitHub Actions, not by repeatedly asking the AI to reproduce the same checks.
+- One release commit should trigger ONE signed release build, not another duplicate full push build.
+- Use targeted regression tests for changed behavior. Reuse passed checks until new changes or failures justify rerunning.
+- Keep essential compilation, signing and architecture checks before publication.
+- Check workflow status at sensible intervals; report stage changes, failures and completion rather than every poll.
+- Avoid large raw logs. Fetch bounded failure details only if something fails.
+- Group code changes before building; avoid rebuilding after every tiny edit.
+- Finish with short release/download links, what changed, verification and actual remaining limitations.
+
+WHAT UPSTREAM CI DOES
+- Upstream checks validate the upstream commit or PR head that they actually tested.
+- They do not validate extra changes that exist only in my fork.
+- Reuse upstream's workflows/components where suitable, but keep relevant fork checks for my changed source and release.
+- An official update alone should not reset or increment my personal version.
+- Merge/sync official updates, preserve my fork-specific settings/version ledger, resolve conflicts, then check the changed integration.
+
+VERSIONING
+- Keep official version/build independent from my personal version in a fork-owned file.
+- For NuvioUniverse: NuvioUniverse-<official version>-(<official build>)-v<personal version>.
+- NuvioUniverse uses an integer personal revision: 0 = 1.0.0, 9 = 1.0.9, 10 = 1.1.0, 24 = 1.2.4.
+- Increment once per actual personal change commit; do not reset when official updates are merged.
+- Use a local commit guard and CI validation. Never assume hooks run for edits made on GitHub's website.
+- Keep Release/Pre-release classification separate from words such as beta in the upstream version.
+- For other projects, explicitly choose the version policy instead of assuming Nuvio's decimal counter.
+
+GITHUB-ACTIONS RELEASES
+- Use the repository's GITHUB_TOKEN to publish so github-actions[bot] is the release author.
+- Store the persistent signing key/passwords only in encrypted GitHub Actions secrets after explicit authorization.
+- Never commit signing keys, passwords or private tokens. Keep the same signing certificate for installable updates.
+- Give the publishing job contents: write; keep build jobs read-only where practical.
+- Restrict publication to my fork and intended branch.
+- Use a release: commit or manual workflow dispatch to trigger the tested, signed release pipeline.
+- For NuvioUniverse, publish separate ARMv7 and ARM64 APKs; no universal release APK is needed.
+- Use download-safe filenames and generate checksums from the exact filenames GitHub will serve.
+- Attach the signed APKs, SHA256SUMS.txt and concise release notes. Combine curated notes with GitHub-generated changes.
+- Mark a normal Release and Latest when requested; do not infer Pre-release from upstream's beta label.
+- Point the app updater at my fork, not the official repository.
+- Verify release flags, bot author, attached files, version/build, supported architectures, signatures and checksums.
+- Report device testing honestly; successful compilation and host UI tests are not physical-device testing.
+
+UPSTREAM CONTRIBUTIONS
+- Keep an official PR focused on the feature suitable for upstream.
+- Follow upstream's PR template and contribution rules.
+- Keep personal branding, signing/release automation and unrelated fork changes out of the official PR.
+- Let upstream maintainers control their CI approvals and merge decisions.
+- Do not claim old screenshots prove a newer implementation.
+
+FINISH
+- Push the intended source and complete authorized publication.
+- Provide working APK/release links and a short change/test report.
+- Export useful reusable project guidance as a normal text file when requested.

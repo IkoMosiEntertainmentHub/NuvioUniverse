@@ -60,8 +60,7 @@ internal fun UniverseSection(
         return
     }
     val cards = sortUniverse(connections, options.universeSortOrder).map { it.item }.withCustomPosterUrls(pattern)
-    val subtitles = connections.associate { (it.item.type to it.item.id) to (it.relations.joinToString(" · ") +
-        (it.item.status?.let { status -> " · $status" } ?: "")) }
+    val subtitles = connections.associate { (it.item.type to it.item.id) to it.relations.joinToString(" · ") }
     DetailPosterRailSection(
         title = stringResource(Res.string.universe_title), items = cards, watchedKeys = watchedKeys,
         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys, showHeader = showHeader,

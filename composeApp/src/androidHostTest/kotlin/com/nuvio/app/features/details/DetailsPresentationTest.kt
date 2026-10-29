@@ -78,7 +78,7 @@ class DetailsPresentationTest {
             NuvioTheme {
                 MaterialTheme(colorScheme = lightColorScheme()) {
                     FinancialsSection(MetaDetails("tt1", "movie", "Movie"), loadFinancials = {
-                        Financials(budget = 100, worldwide = 250, source = "Reported figures", sourceUrl = "https://example.org",
+                        Financials(budget = 100_000_000, worldwide = 250_000_000, source = "Reported figures", sourceUrl = "https://example.org",
                             daily = listOf(GrossPoint("2020-01-01", 250, 250)))
                     })
                 }
@@ -86,14 +86,15 @@ class DetailsPresentationTest {
         }
         compose.onNodeWithText("Box Office ▾").performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("Production budget: $100").assertIsDisplayed()
-        assertWhiteText("Production budget: $100")
-        assertWhiteText("Worldwide gross: $250")
+        compose.onNodeWithText("Production cost: $100M").assertIsDisplayed()
+        assertWhiteText("Production cost: $100M")
+        compose.onNodeWithText("Worldwide gross: $250M").assertDoesNotExist()
         assertWhiteText("Box Office ▴")
         compose.onNodeWithText("Financials ▾").assertDoesNotExist()
-        compose.onNodeWithText("Box office history").performClick()
-        compose.waitForIdle()
-        assertWhiteText("Daily domestic gross · maximum $250")
+        compose.onNodeWithText("Box office history").assertDoesNotExist()
+        compose.onNodeWithText("View data source").assertDoesNotExist()
+        compose.onNodeWithText("Gross minus production budget", substring = true).assertDoesNotExist()
+
     }
 
     @Test fun normalDetailsStayWhiteEvenWithLightMaterialDefaults() {

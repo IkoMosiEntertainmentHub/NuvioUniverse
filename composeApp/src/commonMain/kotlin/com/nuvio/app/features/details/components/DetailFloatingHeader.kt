@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -90,7 +91,11 @@ fun DetailFloatingHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
-                .background(Color.Transparent),
+                .background(Brush.verticalGradient(colorStops = arrayOf(
+                    0f to Color.Black,
+                    0.45f to Color.Black.copy(alpha = 0.65f),
+                    1f to Color.Transparent,
+                ))),
         ) {
             Row(
                 modifier = Modifier

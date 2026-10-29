@@ -1,23 +1,11 @@
-## Hotfix
+## Changes
+- Restored Cast and Production sections to upstream defaults; removed the extra search interface.
+- Player opening artwork and media metadata use canonical artwork/backdrops rather than custom shelf posters.
+- Transparent scrolling logos now have a black-to-transparent gradient behind them.
+- Box Office shows production cost only, with compact amounts such as $100M and $127M. Removed history charts, revenue comparisons and verbose source/disclaimer text.
+- Universe labels show relationships without Released/Returning Series status suffixes.
+- Release commits now use one signed GitHub Actions pipeline instead of duplicating the full Android build.
+- Added reusable fork/release workflow guidelines in Docs/FORK-WORKFLOW-GUIDELINES.txt.
 
-- White Details labels/values and Box Office text stay readable against the dark details background, including expanded budget figures and chart labels.
-- Renamed the expandable Financials section to Box Office.
-- Combined all enabled Universe relationships into one horizontal row, deduplicating titles while retaining relationship labels, sort order and independent filters. Official Collections stays separate above Universe.
-
-## Added and improved
-
-- Independent Universe feature switches, title-rooted universe discovery, and consistent unreleased-title filtering. Generated Franchise Collections starts off.
-- Preserved official Collections and saved library/history/progress. No Custom Artwork Sources controls replaced.
-- Cast, character-credit, two-actor co-star, movie/TV and related-production discovery from Details.
-- Empty Universe rows no longer reserve a padded gap. Portrait Universe cards are the default for new settings; relationship labels appear before title and year. Existing selected styles are retained.
-- Landscape cards show their release year when labels are enabled.
-- Compact two-column movie/show details, expandable financials with sourced historical domestic box-office timelines, reported production budgets and cautious budget comparisons.
-- IntroDB → SkipDB → TheIntroDB fallback by missing segment category, retaining primary markers and safe post-credits boundaries.
-- Independent personal version ledger and upstream-update preservation checks. Updates come from this repository.
-- Signed ARMv7 and ARM64 release automation. GitHub Actions publishes notes and assets after tests and architecture checks; signing secrets must be configured once.
-
-## Coverage and validation limits
-
-Character discovery matches available cast-role credits, not a worldwide character database. Prequel/crossover evidence and official announcement coverage are deliberately limited. Box Office Archive is historical reporting; missing episode/season costs, revenue shares, streaming revenue, break-even and net profit remain unknown. Gross minus production budget is not profit.
-
-Host tests and build checks do not replace current-device playback, sign-in and visual testing. Published skip-marker services are crowdsourced and coverage varies by title and stream cut.
+## Validation
+The linked Actions run contains the checks and both signed ARM APK builds. Physical-device playback and visual verification remain additional checks.

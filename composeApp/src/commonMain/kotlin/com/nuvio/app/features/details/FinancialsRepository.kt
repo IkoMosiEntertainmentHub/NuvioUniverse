@@ -34,23 +34,17 @@ internal object FinancialsRepository {
         val movie = meta.type in setOf("movie", "film")
         val imdb = universeImdbId(meta.imdbId) ?: universeImdbId(meta.id)
         val tmdb = universeTmdbId(meta.id) ?: TmdbService.ensureTmdbId(meta.id, meta.type, meta.imdbId)?.toIntOrNull()
-        val archive = if (movie) safely {
-            val lookup = if (imdb != null) "imdb/$imdb" else tmdb?.let { "tmdb/$it" } ?: return@safely null
-            val found = json("https://boxofficehistory.com/api/v1/lookup/$lookup.json")
-            val id = found.text("id")?.takeIf { Regex("[a-zA-Z0-9_-]+").matches(it) } ?: return@safely null
-            parseArchiveFinancials(json("https://boxofficehistory.com/api/v1/movies/$id.json"))
-        } else null
-        val tmdbData = if (movie && (archive?.budget == null || archive?.worldwide == null)) safely {
+        val tmdbData = if (movie) safely {
             tmdb?.let { json(buildTmdbUrl("movie/$it", TmdbSettingsRepository.effectiveApiKey())) }
         } else null
-        val costs = if (imdb != null && (!movie || archive?.budget == null && tmdbData?.money("budget") == null))
+        val budget = tmdbData?.money("budget")
+        val costs = if (imdb != null && (!movie || budget == null))
             safely { wikidataCosts(imdb, movie) }.orEmpty() else emptyList()
-        // Do not silently combine totals from different reporting snapshots.
-        val result = archive?.copy(productionCosts = costs) ?: Financials(
-            budget = tmdbData?.money("budget"), worldwide = tmdbData?.money("revenue"),
-            source = if (tmdbData != null) "TMDB reported movie figures" else "No comparable financial figures available",
-            sourceUrl = tmdb?.let { "https://www.themoviedb.org/${if (movie) "movie" else "tv"}/$it" } ?: "https://boxofficehistory.com/api",
-            productionCosts = costs,
+        val result = Financials(
+            budget = budget, productionCosts = costs,
+            source = "Production cost metadata",
+            sourceUrl = tmdb?.let { "https://www.themoviedb.org/${if (movie) "movie" else "tv"}/$it" }
+                ?: "https://www.wikidata.org/",
         )
         gate.withLock {
             if (result.budget != null || result.worldwide != null || result.daily.isNotEmpty() || result.weekly.isNotEmpty() || result.weekends.isNotEmpty() || result.productionCosts.isNotEmpty())

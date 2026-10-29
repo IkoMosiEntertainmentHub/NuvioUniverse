@@ -42,8 +42,8 @@ internal class PlayerScreenRuntime(
     val initialBingeGroup: String? get() = args.initialBingeGroup
     val pauseDescription: String? get() = args.pauseDescription
     val logo: String? get() = args.logo
-    val poster: String? get() = args.poster
-    val background: String? get() = args.background
+    val poster: String? get() = defaultPlayerArtwork(playerMeta?.poster, args.poster)
+    val background: String? get() = defaultPlayerArtwork(playerMeta?.background, args.background)
     val seasonNumber: Int? get() = args.seasonNumber
     val episodeNumber: Int? get() = args.episodeNumber
     val episodeTitle: String? get() = args.episodeTitle

@@ -2297,9 +2297,6 @@ private fun ConfiguredMetaSections(
             settings.universeConfiguration.franchiseCollections && universeItems.any {
                 !settings.universeConfiguration.hideUnreleased || it.isReleased(CurrentDateProvider.todayIsoDate())
             })
-    if (meta.cast.isEmpty() && !hasProductionSection) {
-        com.nuvio.app.features.details.components.ProductionSearchButton(meta, onOpenMeta)
-    }
 
     // Helper to check if a section actually has content to show
     val sectionHasContent: (MetaScreenSectionKey) -> Boolean = { key ->
@@ -2347,12 +2344,10 @@ private fun ConfiguredMetaSections(
             }
             MetaScreenSectionKey.PRODUCTION -> {
                 if (hasProductionSection) {
-                    com.nuvio.app.features.details.components.ProductionSearchButton(meta, onOpenMeta)
                     DetailProductionSection(meta = meta, showHeader = showHeader, onCompanyClick = onCompanyClick)
                 }
             }
             MetaScreenSectionKey.CAST -> {
-                com.nuvio.app.features.details.components.ProductionSearchButton(meta, onOpenMeta)
                 DetailCastSection(
                     cast = meta.cast,
                     showHeader = showHeader,

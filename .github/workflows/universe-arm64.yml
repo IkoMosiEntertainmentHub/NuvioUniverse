@@ -26,6 +26,8 @@ concurrency:
 
 jobs:
   android:
+    # The publishing workflow already runs this job for release commits.
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'release:') || inputs.release == true
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -63,7 +65,7 @@ jobs:
           python3 scripts/configure-universe.py
           python3 scripts/test_configure_universe.py
       - name: Test shared Android code
-        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.*Test' --tests 'com.nuvio.app.features.player.skip.*Test' --tests 'com.nuvio.app.features.home.components.*Test' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.updater.*Test' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
+        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.details.*Test' --tests 'com.nuvio.app.features.player.skip.*Test' --tests 'com.nuvio.app.features.player.PlayerArtworkTest' --tests 'com.nuvio.app.features.home.components.*Test' --tests 'com.nuvio.app.core.auth.RemoteSignInTest' --tests 'com.nuvio.app.features.updater.*Test' -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --stacktrace
       - name: Build ARMv7 and ARM64 APKs
         env:
           RELEASE: ${{ inputs.release || false }}

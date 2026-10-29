@@ -10,14 +10,7 @@ IMDb's direct typed edges distinguish sequels, spin-offs and remakes. Bounded in
 
 TMDB verifies the identity and production status of connection candidates. Untitled/TBA/TBD and rumor-labelled identities are excluded. Planned-only records are omitted without independent announcement evidence. Released titles, returning/ended shows and identified productions in development/production/post-production can be represented using the status actually returned. Provider metadata is not independent official verification and coverage is not exhaustive. No release date is manufactured. Hide Unreleased Titles hides future dates, production/development statuses and unknown release state across all generated Universe rails and related-production search. Direct title searches and explicit normal Details navigation remain available.
 
-Cast/Production → Search cast and productions provides:
-
-- Actor name search with an explicit person selection and movie/TV cast credits.
-- Two-person co-star search using intersection of actual cast credits.
-- Character text matching against credit roles for up to 20 identified current-cast members, not a global fictional-character database.
-- Paginated movie/TV title search and the current title's enabled confirmed connections.
-
-Results open normal Details navigation; the original page's normal back-stack and scroll state remain in use. Requests are cancellable and bounded. Empty/error responses offer an explanation. General credit matches never become franchise relationships.
+Cast and Production use the normal upstream sections and navigation. The fork-specific search controls have been removed.
 
 ## Versioning
 
@@ -41,9 +34,7 @@ Empty/fully filtered Universe results are removed from the outer lazy details li
 
 Appearance → Compact movie/show details uses a two-column grid and retains an independent persistent preference. The scrolling header uses a transparent panel and requests a TMDB clear-logo image; a text title remains the fallback.
 
-Box Office expands within movie/show details and has Production budget and Box office history tabs. Box Office Archive's ID lookup and `movies/{id}.json` provide reported USD totals and dated domestic daily/weekly/weekend series. Historical snapshots are labelled and are not replaced with a different current snapshot. Missing values are unknown. TMDB budget/revenue is a fallback when the archive title is unavailable. Wikidata's sourced production-cost statements may provide movie/episode/season/series figures; episode subtotals exclude mixed currencies, duplicate conflicting claims and aggregate costs, and remain explicitly incomplete. No streaming revenue, studio share, marketing cost, break-even or actual profit is invented. Gross minus budget and the budget multiple are preliminary comparisons only.
-
-Sources: [Box Office Archive API](https://boxofficehistory.com/api), [TMDB](https://developer.themoviedb.org/reference/movie-details), [Wikidata Query Service](https://query.wikidata.org/).
+Box Office expands to show production costs only. Movie budgets use TMDB, with sourced Wikidata costs when available. Costs use compact currency amounts such as $100M and $127M; unknown costs stay unknown. History charts, revenue/profit comparisons, capture timestamps and explanatory/source paragraphs are removed from the UI. No Box Office Archive requests are made by this section.
 
 Skip reads use IntroDB first, then SkipDB for each missing category, then TheIntroDB v4 for remaining gaps. Valid primary markers and explicit confirmed-absence results are retained. Uncertain/out-of-range, invalid and beyond-duration fallback markers are rejected. Separated credits stay separate. IntroDB post-credit scenes are retained as non-skippable boundaries. The providers do not all distinguish an ending sequence from end credits; the app keeps the provider's contextual marker rather than fabricating separate timestamps.
 
@@ -52,3 +43,7 @@ Skip reads use IntroDB first, then SkipDB for each missing category, then TheInt
 `.github/workflows/universe-release.yml` runs the signed reusable build and publishes with the repository's `GITHUB_TOKEN`, making GitHub Actions the release author. Use a `release:` commit message when bumping the personal ledger, or dispatch Publish NuvioUniverse Release. The four persistent UNIVERSE signing secrets must be configured once; missing secrets stop the job before any unsigned release can be published. The release classification property controls the GitHub flag independently of upstream's version label.
 
 Details labels and values, expanded Box Office text and timeline labels use explicit white foregrounds on the dark Details surface. All enabled Universe relationship types share one deduplicated horizontal rail, with per-card relationship labels and existing independent feature filters. Official Collections remains its own section.
+
+The floating logo uses a black-to-transparent vertical gradient. Player/media artwork prefers canonical metadata and restores raw Continue Watching artwork before launching; custom shelf poster URLs are suppressed in player artwork fallbacks. Universe card captions include relationships only, without production statuses.
+
+Release commits run one signed publishing pipeline; the duplicate direct-push ARM build skips those commits. Reusable project preferences: [FORK-WORKFLOW-GUIDELINES.txt](FORK-WORKFLOW-GUIDELINES.txt).
