@@ -42,8 +42,9 @@ object SkipIntroRepository {
         ) ?: return emptyList()
         val cacheKey = "movie:$imdbId:${durationMs?.div(1000)}"
         cached(cacheKey)?.let { return it }
-        val primary = withTimeoutOrNull(8_000) { SkipIntroApi.getIntroDbMovieSegments(imdbId)?.movieSkipIntervals() }.orEmpty()
-        return remember(cacheKey, SkipFallbackApi.complete(primary, imdbId, durationMs = durationMs))
+        val data = withTimeoutOrNull(8_000) { SkipIntroApi.getIntroDbMovieSegments(imdbId) }
+        return remember(cacheKey, SkipFallbackApi.complete(data?.movieSkipIntervals().orEmpty(), imdbId, durationMs = durationMs,
+            primaryAbsent = data?.confirmedAbsentCategories().orEmpty()))
     }
 
     suspend fun getSkipIntervals(
@@ -201,31 +202,9 @@ object SkipIntroRepository {
     private fun mergeByPriority(vararg providerResults: List<SkipInterval>): List<SkipInterval> = mergeSkipProviders(*providerResults)
 
     private suspend fun fetchFromIntroDb(imdbId: String, season: Int, episode: Int, durationMs: Long?): List<SkipInterval> {
-        val primary = withTimeoutOrNull(8_000) { fetchPrimaryIntroDb(imdbId, season, episode) }.orEmpty()
-        return SkipFallbackApi.complete(primary, imdbId, season, episode, durationMs)
-    }
-
-    private suspend fun fetchPrimaryIntroDb(imdbId: String, season: Int, episode: Int): List<SkipInterval> {
-        return try {
-            val data = SkipIntroApi.getIntroDbSegments(imdbId, season, episode)
-            if (data == null) return emptyList()
-            listOfNotNull(
-                data.intro.toSkipIntervalOrNull("intro"),
-                data.recap.toSkipIntervalOrNull("recap"),
-                data.outro.toSkipIntervalOrNull("outro"),
-                data.postCredits.toSkipIntervalOrNull("post-credits"),
-            )
-        } catch (e: CancellationException) { throw e } catch (_: Exception) {
-            emptyList()
-        }
-    }
-
-    private fun IntroDbSegment?.toSkipIntervalOrNull(type: String): SkipInterval? {
-        if (this == null) return null
-        val start = startSec ?: startMs?.let { it / 1000.0 }
-        val end = endSec ?: endMs?.let { it / 1000.0 }
-        if (start == null || end == null || !start.isFinite() || !end.isFinite() || start < 0 || end <= start) return null
-        return SkipInterval(startTime = start, endTime = end, type = type, provider = "introdb")
+        val data = withTimeoutOrNull(8_000) { SkipIntroApi.getIntroDbSegments(imdbId, season, episode) }
+        return SkipFallbackApi.complete(data?.episodeSkipIntervals().orEmpty(), imdbId, season, episode, durationMs,
+            primaryAbsent = data?.confirmedAbsentCategories().orEmpty())
     }
 
     private suspend fun fetchFromAniSkip(malId: String, episode: Int): List<SkipInterval> {

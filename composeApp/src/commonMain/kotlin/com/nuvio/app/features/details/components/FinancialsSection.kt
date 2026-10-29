@@ -45,6 +45,9 @@ internal fun FinancialsSection(meta: MetaDetails) {
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (error) TextButton(onClick = { retry++ }) { Text("Financial data unavailable · Retry") }
         data?.let { values ->
+            if (values.budget == null && values.worldwide == null && values.daily.isEmpty() && values.weekly.isEmpty() && values.weekends.isEmpty() && values.productionCosts.isEmpty()) {
+                TextButton(onClick = { data = null; retry++ }) { Text("No financial records returned · Try again") }
+            }
             if (tab == "Production budget") {
                 if (meta.type in setOf("movie", "film")) {
                     val rows = listOf("Production budget" to money(values.budget), "Domestic gross" to money(values.domestic),
@@ -55,7 +58,7 @@ internal fun FinancialsSection(meta: MetaDetails) {
                 }
                 values.productionCosts.forEach { cost ->
                     Text("${cost.level} · ${cost.title}: ${cost.amount} ${cost.currency}", style = MaterialTheme.typography.bodySmall)
-                    Text("Published statement · ${cost.date ?: "Date unknown"}", style = MaterialTheme.typography.labelSmall)
+                    Text("Sourced report · estimate status unknown · ${cost.date ?: "Date unknown"}", style = MaterialTheme.typography.labelSmall)
                     cost.source?.takeIf { it.startsWith("https://") }?.let { link -> TextButton(onClick = { uri.openUri(link) }) { Text("Budget source") } }
                 }
                 val episodeCosts = values.productionCosts.filter { it.level == "Episode" }

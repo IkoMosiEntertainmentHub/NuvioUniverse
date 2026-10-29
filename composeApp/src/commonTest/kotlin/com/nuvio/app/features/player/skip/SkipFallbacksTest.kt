@@ -31,6 +31,13 @@ class SkipFallbacksTest {
         assertEquals(2, result.size)
     }
 
+    @Test fun `primary confirmed absence is not mistaken for missing data`() = runTest {
+        val result = completeSkipSegments(listOf(marker("intro"), marker("outro")),
+            { error("Primary confirmed no recap") }, { error("Primary confirmed no recap") }, primaryAbsent = setOf("recap"))
+        assertEquals(2, result.size)
+        assertEquals(setOf("recap"), IntroDbSegmentsResponse(noRecap = true).confirmedAbsentCategories())
+    }
+
     @Test fun `SkipDB rejects uncertain and invalid markers and converts milliseconds`() {
         assertEquals(1.0, parseSkipDb("""{"segments":{"intro":{"start_ms":1000,"end_ms":9000,"match":"exact"}}}""", "intro", false, 20_000).intervals.single().startTime)
         assertTrue(parseSkipDb("""{"segments":{"intro":{"start_ms":1000,"end_ms":9000,"match":"out-of-range"}}}""", "intro", false, 20_000).intervals.isEmpty())

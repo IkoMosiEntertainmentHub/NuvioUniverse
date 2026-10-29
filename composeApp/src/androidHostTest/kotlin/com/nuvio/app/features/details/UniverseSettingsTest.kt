@@ -22,6 +22,7 @@ class UniverseSettingsTest {
     @AfterTest fun clear() { MetaScreenSettingsRepository.clearLocalState() }
 
     @Test fun allFeatureChoicesAndUniverseSelectionsPersistAcrossRestarts() {
+        MetaScreenSettingsRepository.setCompactDetails(false)
         MetaScreenSettingsRepository.setEnabled(MetaScreenSectionKey.COLLECTION, false)
         val choices = UniverseConfiguration(continuations = false, spinOffs = false,
             franchiseCollections = true, prequels = false, crossovers = false, related = false,
@@ -29,6 +30,7 @@ class UniverseSettingsTest {
         MetaScreenSettingsRepository.setUniverseConfiguration(choices)
         MetaScreenSettingsRepository.onProfileChanged()
         assertEquals(choices, MetaScreenSettingsRepository.uiState.value.universeConfiguration)
+        assertFalse(MetaScreenSettingsRepository.uiState.value.compactDetails)
         assertFalse(MetaScreenSettingsRepository.uiState.value.items.first { it.key == MetaScreenSectionKey.COLLECTION }.enabled)
         MetaScreenSettingsRepository.setUniverseSelection(UniverseSelection("tt123", "movie", "A title", true))
         assertTrue(MetaScreenSettingsRepository.uiState.value.universeConfiguration.selections.single().enabled)
@@ -46,13 +48,13 @@ class UniverseSettingsTest {
 
     @Test fun choicesRoundTripThroughTheAccountProfileSettingsPayload() {
         MetaScreenSettingsRepository.setUniverseSortOrder(UniverseSortOrder.MostPopular)
-        MetaScreenSettingsRepository.setUniversePosterStyle(UniversePosterStyle.Posters)
+        MetaScreenSettingsRepository.setUniversePosterStyle(UniversePosterStyle.Landscape)
         val exported = MetaScreenSettingsStorage.loadPayload()!!
         MetaScreenSettingsRepository.resetToDefaults()
         MetaScreenSettingsStorage.savePayload(exported)
         MetaScreenSettingsRepository.onProfileChanged()
         assertEquals(UniverseSortOrder.MostPopular, MetaScreenSettingsRepository.uiState.value.universeSortOrder)
-        assertEquals(UniversePosterStyle.Posters, MetaScreenSettingsRepository.uiState.value.universePosterStyle)
+        assertEquals(UniversePosterStyle.Landscape, MetaScreenSettingsRepository.uiState.value.universePosterStyle)
     }
 
     @Test fun olderLayoutsInsertUniverseBelowCollectionWithoutChangingCollectionVisibility() {

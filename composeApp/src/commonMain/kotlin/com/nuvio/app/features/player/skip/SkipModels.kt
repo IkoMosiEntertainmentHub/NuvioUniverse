@@ -39,6 +39,20 @@ data class IntroDbSegmentsResponse(
     @SerialName("recap") val recap: IntroDbSegment? = null,
     @SerialName("outro") val outro: IntroDbSegment? = null,
     @SerialName("post_credits") val postCredits: IntroDbSegment? = null,
+    @SerialName("no_intro") val noIntro: Boolean = false,
+    @SerialName("no_recap") val noRecap: Boolean = false,
+    @SerialName("no_outro") val noOutro: Boolean = false,
+)
+
+internal fun IntroDbSegmentsResponse.confirmedAbsentCategories(): Set<String> = buildSet {
+    if (noIntro) add("intro")
+    if (noRecap) add("recap")
+    if (noOutro) add("outro")
+}
+
+internal fun IntroDbSegmentsResponse.episodeSkipIntervals(): List<SkipInterval> = listOfNotNull(
+    intro.movieIntervalOrNull("intro"), recap.movieIntervalOrNull("recap"),
+    outro.movieIntervalOrNull("outro"), postCredits.movieIntervalOrNull("post-credits"),
 )
 
 internal fun IntroDbSegmentsResponse.movieSkipIntervals(): List<SkipInterval> {

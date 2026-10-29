@@ -40,7 +40,7 @@ internal object FinancialsRepository {
             val id = found.text("id")?.takeIf { Regex("[a-zA-Z0-9_-]+").matches(it) } ?: return@safely null
             parseArchiveFinancials(json("https://boxofficehistory.com/api/v1/movies/$id.json"))
         } else null
-        val tmdbData = if (movie && (archive?.budget == null || archive.worldwide == null)) safely {
+        val tmdbData = if (movie && (archive?.budget == null || archive?.worldwide == null)) safely {
             tmdb?.let { json(buildTmdbUrl("movie/$it", TmdbSettingsRepository.effectiveApiKey())) }
         } else null
         val costs = if (imdb != null && (!movie || archive?.budget == null && tmdbData?.money("budget") == null))
@@ -53,7 +53,8 @@ internal object FinancialsRepository {
             productionCosts = costs,
         )
         gate.withLock {
-            cache[key] = Clock.System.now().toEpochMilliseconds() to result
+            if (result.budget != null || result.worldwide != null || result.daily.isNotEmpty() || result.weekly.isNotEmpty() || result.weekends.isNotEmpty() || result.productionCosts.isNotEmpty())
+                cache[key] = Clock.System.now().toEpochMilliseconds() to result
             while (cache.size > 64) cache.remove(cache.keys.first())
         }
         return result
@@ -72,7 +73,7 @@ internal object FinancialsRepository {
               ?production p:P2130 ?statement . ?statement psv:P2130 ?value .
               ?value wikibase:quantityAmount ?amount ; wikibase:quantityUnit ?currency .
               OPTIONAL { ?currency wdt:P498 ?currencyCode }
-              OPTIONAL { ?statement prov:wasDerivedFrom/pr:P854 ?source }
+              ?statement prov:wasDerivedFrom/pr:P854 ?source .
               OPTIONAL { ?statement pq:P585 ?date }
               SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
             } LIMIT 100
@@ -113,7 +114,7 @@ private fun JsonObject.money(key: String): Long? = (get(key) as? JsonPrimitive)?
 
 internal fun knownProductionCostTotal(costs: List<ProductionCost>): Pair<Double, String>? {
     // Conflicting statements about one production, mixed currencies, and aggregate + episode double-counting are not summed.
-    if (costs.isEmpty() || costs.any { it.level != "Episode" } || costs.map { it.currency }.distinct().size != 1 || costs.any { it.currency == "Currency unknown" } ||
+    if (costs.isEmpty() || costs.any { it.level != "Episode" || !it.amount.isFinite() || it.amount <= 0 } || costs.map { it.currency }.distinct().size != 1 || costs.any { it.currency == "Currency unknown" } ||
         costs.map { it.title }.distinct().size != costs.size) return null
     return costs.sumOf { it.amount } to costs.first().currency
 }

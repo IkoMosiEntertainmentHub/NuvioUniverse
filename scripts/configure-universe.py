@@ -69,9 +69,10 @@ def configure():
         required = ('SIGNING_KEY', 'SIGNING_PASSWORD', 'SIGNING_ALIAS', 'KEY_PASSWORD')
         if any(not os.environ.get(key) for key in required):
             raise ValueError('Add the four UNIVERSE signing secrets before a release build')
-        signing = Path(os.environ['RUNNER_TEMP']) / 'universe.jks'
+        signing = Path(os.environ['RUNNER_TEMP']) / 'universe.p12'
         signing.write_bytes(base64.b64decode(os.environ['SIGNING_KEY'], validate=True))
         props.update(NUVIO_RELEASE_STORE_FILE=str(signing),
+                     NUVIO_RELEASE_STORE_TYPE=os.environ.get('SIGNING_STORE_TYPE', 'PKCS12'),
                      NUVIO_RELEASE_STORE_PASSWORD=os.environ['SIGNING_PASSWORD'],
                      NUVIO_RELEASE_KEY_ALIAS=os.environ['SIGNING_ALIAS'],
                      NUVIO_RELEASE_KEY_PASSWORD=os.environ['KEY_PASSWORD'])

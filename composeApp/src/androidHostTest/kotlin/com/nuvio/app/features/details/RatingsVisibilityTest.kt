@@ -133,8 +133,9 @@ class RatingsVisibilityTest {
                     title = meta.name,
                     seasonNumber = 1,
                     episodeNumber = 1,
-                    lastPositionMs = 950,
-                    durationMs = 1000,
+                    // One-second placeholder durations deliberately cannot mark an episode completed.
+                    lastPositionMs = 95_000,
+                    durationMs = 100_000,
                     lastUpdatedEpochMs = 1,
                 ))
             }

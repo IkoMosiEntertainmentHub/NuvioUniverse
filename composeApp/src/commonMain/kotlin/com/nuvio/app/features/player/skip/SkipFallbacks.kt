@@ -34,22 +34,23 @@ internal suspend fun completeSkipSegments(
     primary: List<SkipInterval>,
     skipDb: suspend (String) -> SkipProviderResult,
     theIntroDb: suspend () -> List<SkipInterval>,
+    primaryAbsent: Set<String> = emptySet(),
 ): List<SkipInterval> {
     val required = setOf("intro", "recap", "outro")
     val first = mergeSkipProviders(primary)
-    val missing = required - first.mapNotNull { skipCategory(it.type) }.toSet()
+    val missing = required - first.mapNotNull { skipCategory(it.type) }.toSet() - primaryAbsent
     if (missing.isEmpty()) return first
     val secondary = coroutineScope { missing.map { kind -> async { skipDb(kind) } }.awaitAll() }
     val merged = mergeSkipProviders(first, secondary.flatMap { it.intervals })
     val absent = secondary.flatMap { it.confirmedAbsent }.toSet()
-    val remaining = required - merged.mapNotNull { skipCategory(it.type) }.toSet() - absent
+    val remaining = required - merged.mapNotNull { skipCategory(it.type) }.toSet() - absent - primaryAbsent
     if (remaining.isEmpty()) return merged
     val third = theIntroDb().filter { skipCategory(it.type) in remaining }
     return mergeSkipProviders(merged, third)
 }
 
 internal object SkipFallbackApi {
-    suspend fun complete(primary: List<SkipInterval>, imdb: String, season: Int? = null, episode: Int? = null, durationMs: Long? = null): List<SkipInterval> {
+    suspend fun complete(primary: List<SkipInterval>, imdb: String, season: Int? = null, episode: Int? = null, durationMs: Long? = null, primaryAbsent: Set<String> = emptySet()): List<SkipInterval> {
         if (!Regex("tt\\d+").matches(imdb) || (season == null) != (episode == null)) return primary
         val coordinates = if (season != null) "&season=$season&episode=$episode" else ""
         val seconds = durationMs?.takeIf { it > 0 }?.let { "&duration=${it / 1000.0}" }.orEmpty()
@@ -62,7 +63,7 @@ internal object SkipFallbackApi {
                 val duration = durationMs?.takeIf { it > 0 }?.let { "&duration_ms=$it" }.orEmpty()
                 get("https://api.theintrodb.org/v4/media?imdb_id=$imdb$coordinates$duration")
                     ?.let { parseTheIntroDb(it, season == null, durationMs) }.orEmpty()
-            })
+            }, primaryAbsent = primaryAbsent)
     }
     private suspend fun get(url: String): String? = try {
         withTimeoutOrNull(8_000) { httpGetText(url) }

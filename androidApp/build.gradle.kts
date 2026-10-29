@@ -72,6 +72,7 @@ android {
                 storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
+                localProps.getProperty("NUVIO_RELEASE_STORE_TYPE")?.let { storeType = it }
             }
         }
     }
