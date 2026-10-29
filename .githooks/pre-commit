@@ -1,4 +1,4 @@
 #!/bin/sh
-# Repository-local only. A failed version check stops the commit.
+# Stage the independent ledger before Git writes the commit tree.
 python_executable=$(git config --get nuvio.python || echo python)
 "$python_executable" scripts/universe_version.py prepare

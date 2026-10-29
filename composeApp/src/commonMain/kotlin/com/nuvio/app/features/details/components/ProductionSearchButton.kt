@@ -72,8 +72,9 @@ internal fun ProductionSearchButton(meta: MetaDetails, onOpenMeta: ((MetaPreview
     }
     val states by UniverseRepository.states.collectAsState()
     val settings by MetaScreenSettingsRepository.uiState.collectAsState()
-    val related = visibleUniverseConnections(states[UniverseRepository.key(meta)]?.items.orEmpty(), settings.universeConfiguration,
-        com.nuvio.app.features.watchprogress.CurrentDateProvider.todayIsoDate())
+    val related = if (universeEnabled(meta, settings.universeConfiguration))
+        visibleUniverseConnections(states[UniverseRepository.key(meta)]?.items.orEmpty(), settings.universeConfiguration,
+            com.nuvio.app.features.watchprogress.CurrentDateProvider.todayIsoDate()) else emptyList()
     val displayed = if (mode == ProductionSearchMode.Related) related.map { it.item } else results
     AlertDialog(onDismissRequest = { job?.cancel(); open = false }, title = { Text("Cast and production search") }, text = {
         Column {
@@ -96,12 +97,19 @@ internal fun ProductionSearchButton(meta: MetaDetails, onOpenMeta: ((MetaPreview
             LazyColumn(Modifier.heightIn(max = 360.dp)) {
                 if (mode == ProductionSearchMode.Actor || mode == ProductionSearchMode.CoStars) {
                     if (query.isBlank()) items(meta.cast.filter { it.tmdbId != null }.distinctBy { it.tmdbId }) { person ->
-                        TextButton(onClick = { request { results = ProductionDiscovery.credits(person.tmdbId!!).map { it.item }.distinctBy { "${it.type}:${it.id}" } } }) {
+                        TextButton(enabled = mode != ProductionSearchMode.CoStars || firstPerson?.id != person.tmdbId, onClick = {
+                            if (mode == ProductionSearchMode.CoStars && firstPerson == null) firstPerson = DiscoveryPerson(person.tmdbId!!, person.name)
+                            else request {
+                                results = if (mode == ProductionSearchMode.CoStars) ProductionDiscovery.sharedCredits(firstPerson!!.id, person.tmdbId!!)
+                                    else ProductionDiscovery.credits(person.tmdbId!!).map { it.item }.distinctBy { "${it.type}:${it.id}" }
+                                if (results.isEmpty()) message = "No matching movie or TV credits."
+                            }
+                        }) {
                             Text("${person.name} · ${person.role.orEmpty()}")
                         }
                     }
                     items(people, key = { "person:${it.id}" }) { person ->
-                        TextButton(onClick = {
+                        TextButton(enabled = mode != ProductionSearchMode.CoStars || firstPerson?.id != person.id, onClick = {
                             if (mode == ProductionSearchMode.CoStars && firstPerson == null) {
                                 firstPerson = person; people = emptyList(); query = ""
                             } else request {

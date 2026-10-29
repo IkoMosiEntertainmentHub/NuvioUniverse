@@ -11,6 +11,21 @@ import kotlin.test.*
 class UniverseRepositoryTest {
     private val meta = MetaDetails(id = "tt0903747", type = "series", name = "A show")
 
+    @Test fun `only verified productions reach progressive results and cached output`() = runTest {
+        val published = mutableListOf<List<UniverseConnection>>()
+        val client = UniverseClient(request = { response(payload(
+            edge("tt1", "Confirmed production", "Spin-off", "movie"),
+            edge("tt2", "Unverified project", "Followed by", "movie"),
+        )) }, resolveImdb = { _, _ -> null }, nowMs = { 0L }, verify = { connection ->
+            if (connection.item.id == "tt1") connection.copy(item = connection.item.copy(status = "In Production", rawReleaseDate = null)) else null
+        })
+        val result = client.load(meta, onPartial = { published += it })!!
+        assertEquals(listOf("tt1"), result.map { it.item.id })
+        assertTrue(published.flatten().none { it.item.id == "tt2" })
+        assertEquals("In Production", client.load(meta)!!.single().item.status)
+        assertTrue(visibleUniverseConnections(result, UniverseConfiguration(hideUnreleased = true), "2026-10-29").isEmpty())
+    }
+
     @Test fun `connections retain multiple relations and skip self and unsupported types`() {
         val result = parseUniverse(payload(
             edge("tt0903747", "Self", "Follows", "tvSeries"),

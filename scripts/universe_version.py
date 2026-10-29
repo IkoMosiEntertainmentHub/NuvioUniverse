@@ -36,7 +36,7 @@ def qualifies(paths):
     # Each personally authored content change qualifies; the ledger itself does not.
     return any(p and p != LEDGER for p in paths)
 
-def prepare():
+def prepare(amend=False):
     if os.environ.get('NUVIO_OFFICIAL_SYNC') == '1':
         return
     # Rebase/cherry-pick replay must preserve the already assigned revision.
@@ -52,7 +52,7 @@ def prepare():
     paths = git('diff', '--cached', '--name-only').splitlines()
     if not qualifies(paths):
         return
-    previous = properties(git('show', f'HEAD:{LEDGER}'))
+    previous = properties(git('show', f'{"HEAD^" if amend else "HEAD"}:{LEDGER}'))
     before = int(previous.get('personalRevision', 0))
     revision = current_revision()
     if revision < before:
@@ -69,6 +69,20 @@ def check(base):
     previous = int(old.get('personalRevision', 0))
     if revision < previous:
         raise SystemExit('Personal revision decreased')
+    parents = git('rev-list', '--parents', '-n', '1', 'HEAD').split()[1:]
+    if len(parents) == 1:
+        changed = git('diff', '--name-only', base, 'HEAD').splitlines()
+        if qualifies(changed) and revision != previous + 1:
+            raise SystemExit('A personal change commit must advance exactly one revision')
+    elif parents:
+        inherited = []
+        for parent in parents:
+            try:
+                inherited.append(int(properties(git('show', f'{parent}:{LEDGER}')).get('personalRevision', 0)))
+            except subprocess.CalledProcessError:
+                inherited.append(0) # Official upstream has no personal ledger.
+        if revision != max(inherited):
+            raise SystemExit('A merge must preserve the greatest inherited personal revision')
     # Guard the build wiring after upstream edits as well as the ledger.
     for filename in ('androidApp/build.gradle.kts', 'composeApp/build.gradle.kts'):
         content = (ROOT / filename).read_text()
@@ -80,11 +94,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['show', 'bump', 'prepare', 'install-hooks', 'check'])
     parser.add_argument('--base', default='HEAD^')
+    parser.add_argument('--amend', action='store_true')
     args = parser.parse_args()
     if args.command == 'bump':
         print(personal(bump()))
     elif args.command == 'prepare':
-        prepare()
+        prepare(amend=args.amend)
     elif args.command == 'install-hooks':
         subprocess.check_call(['git', 'config', 'core.hooksPath', '.githooks'], cwd=ROOT)
     elif args.command == 'check':

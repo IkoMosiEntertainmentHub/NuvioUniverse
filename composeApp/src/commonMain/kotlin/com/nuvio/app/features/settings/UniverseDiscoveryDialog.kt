@@ -59,7 +59,7 @@ internal fun UniverseDiscoveryDialog(onDismiss: () -> Unit) {
                                         ?.let { com.nuvio.app.features.tmdb.TmdbService.tmdbToImdb(it, title.type) }
                                     if (imdb == null) { message = "No IMDb connections identity available for this title." }
                                     else {
-                                        MetaScreenSettingsRepository.setUniverseSelection(UniverseSelection(imdb, title.type, title.name))
+                                        MetaScreenSettingsRepository.setUniverseSelection(UniverseSelection(imdb, title.type, title.name, tmdbId = title.id))
                                         UniverseRepository.prefetch(MetaDetails(imdb, title.type, title.name))
                                         message = "Added ${title.name}. Its connections appear on that title's Details Screen when available."
                                     }

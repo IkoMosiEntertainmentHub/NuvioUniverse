@@ -45,6 +45,29 @@ class UniverseConfigurationTest {
         assertTrue(establishedTitle("Avengers: Doomsday"))
     }
 
+    @Test fun `individual universe switches match both normal details identities without deleting titles`() {
+        val selection = UniverseSelection("tt1", "movie", "A title", false, "tmdb:12")
+        val config = UniverseConfiguration(selections = listOf(selection))
+        assertFalse(universeEnabled(MetaDetails("tmdb:12", "movie", "A title"), config))
+        assertFalse(universeEnabled(MetaDetails("tt1", "movie", "A title"), config))
+        assertTrue(universeEnabled(MetaDetails("tt2", "movie", "Other"), config))
+        assertFalse(config.franchiseCollections)
+    }
+
+    @Test fun `co-star intersection uses production identity and not coincidental titles`() {
+        val film = MetaPreview("tmdb:1", "movie", "Same name")
+        val show = MetaPreview("tmdb:1", "series", "Same name")
+        assertEquals(listOf(film), sharedCastCredits(listOf(CreditProduction(film, "A"), CreditProduction(show, "B")), listOf(CreditProduction(film, "C"))))
+        assertTrue(sharedCastCredits(listOf(CreditProduction(show, "A")), listOf(CreditProduction(film, "B"))).isEmpty())
+    }
+
+    @Test fun `announcements require a confirmed stable identity and never manufacture a date`() {
+        assertNotNull(officialAnnouncementSource("tt21357150", "Avengers: Doomsday"))
+        assertNull(officialAnnouncementSource("tt1", "Avengers: Doomsday"))
+        assertNull(officialAnnouncementSource("tt21357150", "Untitled Avengers"))
+        assertFalse(title("tt21357150", listOf("Followed by"), status = "Announced").isReleased("2026-10-29"))
+    }
+
     @Test fun `prequels and crossovers use explicit sourced evidence rather than release order`() {
         assertNull(universeFeature("References"))
         assertEquals(UniverseFeature.Continuations, universeFeature("Follows"))

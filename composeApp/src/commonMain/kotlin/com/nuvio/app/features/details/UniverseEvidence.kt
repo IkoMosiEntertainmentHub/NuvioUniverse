@@ -20,6 +20,15 @@ private val evidenceEdges = listOf(
         "https://www.warnerbros.com/movies/freddy-vs-jason"),
 )
 
+/** An announcement can establish a planned record, but never invent a missing date or status.
+ * Stable IMDb identity and matching title are required; a name match alone is insufficient.
+ */
+internal fun officialAnnouncementSource(id: String, title: String): String? = when {
+    id == "tt21357150" && title.equals("Avengers: Doomsday", ignoreCase = true) ->
+        "https://movies.disney.com/avengers-doomsday"
+    else -> null
+}
+
 internal fun explicitUniverseConnections(id: String): List<UniverseConnection> = evidenceEdges.mapNotNull { edge ->
     val (title, relation) = when (id) {
         edge.from.id -> edge.to to edge.relation

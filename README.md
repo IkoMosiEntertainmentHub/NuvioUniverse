@@ -49,11 +49,11 @@ Personal builds target **Android armeabi-v7a (ARMv7) and arm64-v8a (ARM64)** and
 Version format:
 
 ```text
-<official version>-NuvioUniverse-<personal version> (official build number)
-0.6.5-beta-NuvioUniverse-1.0.0 (148)
+NuvioUniverse-<official version>-(<official build number>)-v<personal version>
+NuvioUniverse-0.6.5-beta-(148)-v1.0.2
 ```
 
-The number in parentheses comes directly from the official Nuvio version configuration. The personal version tracks changes made here. Release notes describe additions, fixes, installation changes and validation.
+The number in parentheses comes directly from the official Nuvio version configuration. The personal version is stored independently and advances once per personal change commit: v1.0.9 → v1.1.0. Official-only updates preserve it. Release classification is independent of an upstream beta suffix. See [Universe configuration, search, versioning and limitations](Docs/UNIVERSE-DISCOVERY.md).
 
 ## Contributing to official Nuvio
 

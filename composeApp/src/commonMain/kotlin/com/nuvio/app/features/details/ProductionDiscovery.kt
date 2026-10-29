@@ -59,8 +59,7 @@ internal object ProductionDiscovery {
     suspend fun sharedCredits(first: Int, second: Int): List<MetaPreview> = coroutineScope {
         val left = async { credits(first) }
         val right = async { credits(second) }
-        val keys = right.await().map { "${it.item.type}:${it.item.id}" }.toSet()
-        left.await().map { it.item }.filter { "${it.type}:${it.id}" in keys }.distinctBy { "${it.type}:${it.id}" }
+        sharedCastCredits(left.await(), right.await())
     }
 
     suspend fun characters(query: String, cast: List<MetaPerson>): List<MetaPreview> = coroutineScope {
@@ -82,11 +81,13 @@ internal object ProductionDiscovery {
         val data = fetch("$type/$id")
         val name = data.text("title") ?: data.text("name") ?: return null
         if (!establishedTitle(name)) return null
-        val status = data.text("status") ?: return null
+        val providerStatus = data.text("status") ?: return null
+        val announcement = officialAnnouncementSource(connection.item.id, name)
+        val status = if (providerStatus == "Planned" && announcement != null) "Announced" else providerStatus
         // Planned metadata alone is not confirmation of an announced project.
-        if (status !in setOf("Released", "Returning Series", "Ended", "Canceled", "In Production", "Post Production", "In Development", "Pilot")) return null
+        if (status !in setOf("Released", "Returning Series", "Ended", "Canceled", "In Production", "Post Production", "In Development", "Pilot", "Announced")) return null
         val date = data.text("release_date") ?: data.text("first_air_date")
-        val result = connection.copy(item = connection.item.copy(status = status, rawReleaseDate = date,
+        val result = connection.copy(evidence = connection.evidence + (announcement?.let { "; $it" } ?: ""), item = connection.item.copy(status = status, rawReleaseDate = date,
             releaseInfo = date?.take(4) ?: connection.item.releaseInfo,
             poster = connection.item.poster ?: data.text("poster_path")?.let { "https://image.tmdb.org/t/p/w500$it" }))
         cacheGate.withLock {
@@ -99,6 +100,11 @@ internal object ProductionDiscovery {
 
 internal fun characterMatches(role: String, query: String): Boolean = query.trim().length >= 2 &&
     role.split(" / ", "/", "(").any { it.trim().contains(query.trim(), ignoreCase = true) }
+
+internal fun sharedCastCredits(left: List<CreditProduction>, right: List<CreditProduction>): List<MetaPreview> {
+    val keys = right.map { "${it.item.type}:${it.item.id}" }.toSet()
+    return left.map { it.item }.filter { "${it.type}:${it.id}" in keys }.distinctBy { "${it.type}:${it.id}" }
+}
 
 internal fun parseDiscoveryTitle(row: JsonObject): MetaPreview? {
     val media = row.text("media_type") ?: return null

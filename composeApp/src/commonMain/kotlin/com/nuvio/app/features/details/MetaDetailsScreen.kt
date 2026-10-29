@@ -2280,6 +2280,20 @@ private fun ConfiguredMetaSections(
 ) {
     val enabledItems = settings.items.filter { it.enabled }
 
+    val universeStates by UniverseRepository.states.collectAsStateWithLifecycle()
+    LaunchedEffect(meta.id, meta.imdbId, enabledItems.any { it.key == MetaScreenSectionKey.UNIVERSE }) {
+        UniverseRepository.prefetch(meta)
+    }
+    val universeItems = universeStates[UniverseRepository.key(meta)]?.items.orEmpty()
+    val universeHasResults = universeEnabled(meta, settings.universeConfiguration) && (
+        visibleUniverseConnections(universeItems, settings.universeConfiguration, CurrentDateProvider.todayIsoDate()).isNotEmpty() ||
+            settings.universeConfiguration.franchiseCollections && universeItems.any {
+                !settings.universeConfiguration.hideUnreleased || it.isReleased(CurrentDateProvider.todayIsoDate())
+            })
+    if (meta.cast.isEmpty() && !hasProductionSection) {
+        com.nuvio.app.features.details.components.ProductionSearchButton(meta, onOpenMeta)
+    }
+
     // Helper to check if a section actually has content to show
     val sectionHasContent: (MetaScreenSectionKey) -> Boolean = { key ->
         when (key) {
@@ -2292,7 +2306,7 @@ private fun ConfiguredMetaSections(
             MetaScreenSectionKey.EPISODES -> hasEpisodes
             MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
             MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
-            MetaScreenSectionKey.UNIVERSE -> supportsUniverse(meta.type)
+            MetaScreenSectionKey.UNIVERSE -> supportsUniverse(meta.type) && universeHasResults
             MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
         }
     }

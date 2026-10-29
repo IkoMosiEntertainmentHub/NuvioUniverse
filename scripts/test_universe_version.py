@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 import subprocess
+import shutil
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -45,11 +47,33 @@ class VersionTests(unittest.TestCase):
                 version.prepare()
                 self.assertEqual(25, version.current_revision())
                 git('commit', '-m', 'new personal change')
+                self.assertIn('personalRevision=25', git('show', f'HEAD:{version.LEDGER}'))
                 self.assertEqual('1.2.5', version.personal(version.current_revision()))
                 # Replaying an already versioned commit must not bump twice.
                 (root / '.git/rebase-merge').mkdir()
                 version.prepare()
                 self.assertEqual(25, version.current_revision())
+
+    def test_real_hook_includes_increment_in_the_commit_tree(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=root, text=True, stderr=subprocess.DEVNULL).strip()
+            git('init', '-b', 'personal')
+            git('config', 'user.name', 'Version test')
+            git('config', 'user.email', 'test@example.invalid')
+            (root / version.LEDGER).write_text('personalRevision=24\nreleaseClassification=release\n')
+            (root / 'code').write_text('one')
+            git('add', '.'); git('commit', '-m', 'base')
+            (root / 'scripts').mkdir()
+            shutil.copy(Path(__file__).with_name('universe_version.py'), root / 'scripts/universe_version.py')
+            hook = root / '.git/hooks/pre-commit'
+            hook.write_text('#!/bin/sh\n"' + sys.executable.replace('\\', '/') + '" scripts/universe_version.py prepare\n', encoding='utf-8')
+            hook.chmod(0o755)
+            (root / 'code').write_text('two')
+            git('add', 'code'); git('commit', '-m', 'personal change')
+            self.assertIn('personalRevision=25', git('show', f'HEAD:{version.LEDGER}'))
+            self.assertEqual('', git('status', '--porcelain', '--', version.LEDGER))
 
     def test_decrease_rejected(self):
         with tempfile.TemporaryDirectory() as folder:

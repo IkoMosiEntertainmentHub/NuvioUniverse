@@ -46,8 +46,7 @@ internal fun UniverseSection(
         UniverseRepository.prefetch(meta)
     }
     val configuration = options.universeConfiguration
-    val sourceIds = setOf(meta.id, meta.imdbId).filterNotNull()
-    if (configuration.selections.any { !it.enabled && it.id in sourceIds }) return
+    if (!universeEnabled(meta, configuration)) return
     val filtered = visibleUniverseConnections(items.orEmpty(), configuration, CurrentDateProvider.todayIsoDate())
     val groups = UniverseFeature.entries.filter { it != UniverseFeature.FranchiseCollections }.mapNotNull { feature ->
         val connections = filtered.filter { it.relations.any { relation -> universeFeature(relation) == feature } }
