@@ -134,8 +134,8 @@ class RatingsVisibilityTest {
                     seasonNumber = 1,
                     episodeNumber = 1,
                     // One-second placeholder durations deliberately cannot mark an episode completed.
-                    lastPositionMs = 95_000,
-                    durationMs = 100_000,
+                    lastPositionMs = 1_140_000,
+                    durationMs = 1_200_000,
                     lastUpdatedEpochMs = 1,
                 ))
             }
