@@ -2,7 +2,7 @@
 
 Settings → Layout → Details → Universe uses Nuvio's existing settings rows, chips and switches. Custom Artwork Sources and its six Apply Custom Posters To controls are unchanged.
 
-Each relationship feature and Hide Unreleased Titles is stored independently in the existing profile-scoped details payload. Franchise Collections defaults to OFF, including old payload migration. Generated rails are views, not saved collections: switching them off never changes the library, user collections, watch history or progress. Only nonempty relationship rails render.
+Each relationship feature and Hide Unreleased Titles is stored independently in the existing profile-scoped details payload. Franchise Collections defaults to OFF, including old payload migration. Generated rails are views, not saved collections: switching them off never changes the library, user collections, watch history or progress. Only nonempty results render in one deduplicated Universe rail.
 
 Discover and manage universes searches TMDB movies and TV shows. Add a title-rooted connected-production universe and independently enable/disable it. This is not a curated list of all named shared universes. Disabling a title-rooted universe suppresses its generated details rails, not the title itself.
 
@@ -41,7 +41,7 @@ Empty/fully filtered Universe results are removed from the outer lazy details li
 
 Appearance → Compact movie/show details uses a two-column grid and retains an independent persistent preference. The scrolling header uses a transparent panel and requests a TMDB clear-logo image; a text title remains the fallback.
 
-Financials expands within movie/show details and has Production budget and Box office history tabs. Box Office Archive's ID lookup and `movies/{id}.json` provide reported USD totals and dated domestic daily/weekly/weekend series. Historical snapshots are labelled and are not replaced with a different current snapshot. Missing values are unknown. TMDB budget/revenue is a fallback when the archive title is unavailable. Wikidata's sourced production-cost statements may provide movie/episode/season/series figures; episode subtotals exclude mixed currencies, duplicate conflicting claims and aggregate costs, and remain explicitly incomplete. No streaming revenue, studio share, marketing cost, break-even or actual profit is invented. Gross minus budget and the budget multiple are preliminary comparisons only.
+Box Office expands within movie/show details and has Production budget and Box office history tabs. Box Office Archive's ID lookup and `movies/{id}.json` provide reported USD totals and dated domestic daily/weekly/weekend series. Historical snapshots are labelled and are not replaced with a different current snapshot. Missing values are unknown. TMDB budget/revenue is a fallback when the archive title is unavailable. Wikidata's sourced production-cost statements may provide movie/episode/season/series figures; episode subtotals exclude mixed currencies, duplicate conflicting claims and aggregate costs, and remain explicitly incomplete. No streaming revenue, studio share, marketing cost, break-even or actual profit is invented. Gross minus budget and the budget multiple are preliminary comparisons only.
 
 Sources: [Box Office Archive API](https://boxofficehistory.com/api), [TMDB](https://developer.themoviedb.org/reference/movie-details), [Wikidata Query Service](https://query.wikidata.org/).
 
@@ -50,3 +50,5 @@ Skip reads use IntroDB first, then SkipDB for each missing category, then TheInt
 [IntroDB](https://introdb.app/docs), [SkipDB API and ODbL reciprocity terms](https://skipdb.tv/docs), [TheIntroDB v4](https://theintrodb.org/docs). These integrations only read fallback data; they do not submit timestamps or create provider accounts.
 
 `.github/workflows/universe-release.yml` runs the signed reusable build and publishes with the repository's `GITHUB_TOKEN`, making GitHub Actions the release author. Use a `release:` commit message when bumping the personal ledger, or dispatch Publish NuvioUniverse Release. The four persistent UNIVERSE signing secrets must be configured once; missing secrets stop the job before any unsigned release can be published. The release classification property controls the GitHub flag independently of upstream's version label.
+
+Details labels and values, expanded Box Office text and timeline labels use explicit white foregrounds on the dark Details surface. All enabled Universe relationship types share one deduplicated horizontal rail, with per-card relationship labels and existing independent feature filters. Official Collections remains its own section.

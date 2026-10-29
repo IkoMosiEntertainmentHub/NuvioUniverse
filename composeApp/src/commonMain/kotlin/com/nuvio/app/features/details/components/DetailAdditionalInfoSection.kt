@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,8 +75,8 @@ fun DetailAdditionalInfoSection(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     pair.forEach { (label, value) ->
                         Column(Modifier.weight(1f).padding(vertical = 5.dp)) {
-                            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(value, style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                            Text(label, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                            Text(value, style = MaterialTheme.typography.bodySmall, color = Color.White, maxLines = 3, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     if (pair.size == 1) Box(Modifier.weight(1f))
@@ -112,7 +113,7 @@ private fun DetailInfoRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                color = Color.White.copy(alpha = 0.8f),
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
@@ -121,7 +122,7 @@ private fun DetailInfoRow(
                     .weight(1f)
                     .padding(start = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = Color.White,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.End,
                 maxLines = 2,
@@ -134,7 +135,7 @@ private fun DetailInfoRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)),
+                    .background(Color.White.copy(alpha = 0.10f)),
             )
         }
     }

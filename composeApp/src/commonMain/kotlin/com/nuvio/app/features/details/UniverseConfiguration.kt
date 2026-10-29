@@ -75,10 +75,22 @@ internal fun visibleUniverseConnections(
 internal fun establishedTitle(name: String): Boolean = name.isNotBlank() &&
     !Regex("(?i)\\b(rumou?red|untitled|tba|tbd)\\b").containsMatchIn(name)
 
+/** A single deduplicated rail, retaining independent feature filters and release filtering. */
+internal fun universeRailConnections(
+    items: List<UniverseConnection>, configuration: UniverseConfiguration, today: String,
+): List<UniverseConnection> {
+    val visible = visibleUniverseConnections(items, configuration, today)
+    val franchise = if (configuration.franchiseCollections) items
+        .filter { !configuration.hideUnreleased || it.isReleased(today) }
+        .map { it.copy(relations = listOf("Franchise collection")) } else emptyList()
+    return (visible + franchise).groupBy { it.item.type to it.item.id }.values.map { matches ->
+        val relationships = matches.flatMap { it.relations }.distinct()
+        matches.first().copy(relations = relationships)
+    }
+}
+
 internal fun universeEnabled(meta: MetaDetails, configuration: UniverseConfiguration): Boolean =
     configuration.selections.none { !it.enabled && (it.id == meta.id || it.id == meta.imdbId || it.tmdbId == meta.id) }
 
 internal fun hasVisibleUniverse(meta: MetaDetails, items: List<UniverseConnection>, configuration: UniverseConfiguration, today: String): Boolean =
-    universeEnabled(meta, configuration) && (
-        visibleUniverseConnections(items, configuration, today).isNotEmpty() ||
-            configuration.franchiseCollections && items.any { !configuration.hideUnreleased || it.isReleased(today) })
+    universeEnabled(meta, configuration) && universeRailConnections(items, configuration, today).isNotEmpty()

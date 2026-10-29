@@ -1,3 +1,9 @@
+## Hotfix
+
+- White Details labels/values and Box Office text stay readable against the dark details background, including expanded budget figures and chart labels.
+- Renamed the expandable Financials section to Box Office.
+- Combined all enabled Universe relationships into one horizontal row, deduplicating titles while retaining relationship labels, sort order and independent filters. Official Collections stays separate above Universe.
+
 ## Added and improved
 
 - Independent Universe feature switches, title-rooted universe discovery, and consistent unreleased-title filtering. Generated Franchise Collections starts off.

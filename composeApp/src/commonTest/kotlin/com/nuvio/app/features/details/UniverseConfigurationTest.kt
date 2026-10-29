@@ -6,6 +6,20 @@ import kotlinx.serialization.json.jsonObject
 import kotlin.test.*
 
 class UniverseConfigurationTest {
+    @Test fun `one universe rail combines relationship types without duplicate productions`() {
+        val sequel = title("tt2", listOf("Followed by"), "2020-01-01")
+        val spinOff = title("tt3", listOf("Spin-off"), "2021-01-01")
+        val future = title("tt4", listOf("Prequel"), "2028-01-01")
+        val items = listOf(sequel, spinOff, sequel.copy(relations = listOf("Crossover")), future)
+        val config = UniverseConfiguration(franchiseCollections = true, hideUnreleased = true)
+        val rail = universeRailConnections(items, config, "2026-10-29")
+        assertEquals(listOf("tt2", "tt3"), rail.map { it.item.id })
+        assertTrue(rail.first().relations.containsAll(listOf("Followed by", "Crossover")))
+        val disabled = universeRailConnections(items, config.copy(continuations = false), "2026-10-29")
+        assertFalse(disabled.flatMap { it.relations }.contains("Followed by"))
+        assertTrue(disabled.any { "Spin-off" in it.relations })
+    }
+
     @Test fun `empty or fully filtered universes do not create an outer padded section`() {
         val meta = MetaDetails("tt1", "movie", "Title")
         assertFalse(hasVisibleUniverse(meta, emptyList(), UniverseConfiguration(), "2026-10-29"))

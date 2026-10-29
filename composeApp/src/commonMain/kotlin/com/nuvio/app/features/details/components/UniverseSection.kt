@@ -1,13 +1,13 @@
 package com.nuvio.app.features.details.components
 
-import androidx.compose.foundation.layout.Column
+
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.Modifierimport androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,9 +21,9 @@ import com.nuvio.app.features.details.UniverseLoadState
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.UniversePosterStyle
 import com.nuvio.app.features.details.*
-import com.nuvio.app.features.home.HomeCatalogSettingsRepository
+
 import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.filterReleasedItems
+
 import com.nuvio.app.features.watchprogress.CurrentDateProvider
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -47,42 +47,29 @@ internal fun UniverseSection(
     }
     val configuration = options.universeConfiguration
     if (!universeEnabled(meta, configuration)) return
-    val filtered = visibleUniverseConnections(items.orEmpty(), configuration, CurrentDateProvider.todayIsoDate())
-    val groups = UniverseFeature.entries.filter { it != UniverseFeature.FranchiseCollections }.mapNotNull { feature ->
-        val connections = filtered.filter { it.relations.any { relation -> universeFeature(relation) == feature } }
-        if (connections.isEmpty()) null else feature.label to connections
-    }.toMutableList()
-    if (configuration.franchiseCollections) {
-        val franchise = items.orEmpty().filter { !configuration.hideUnreleased || it.isReleased(CurrentDateProvider.todayIsoDate()) }
-        if (franchise.isNotEmpty()) groups += "Franchise Collections · includes alternate continuities" to franchise
-    }
+    val connections = universeRailConnections(items.orEmpty(), configuration, CurrentDateProvider.todayIsoDate())
     val pattern = CustomPosterUrlRepository.let {
         it.ensureLoaded()
         it.patternForScreen(CustomPosterScreen.DETAILS)
     }
-    if (groups.isEmpty()) {
+    if (connections.isEmpty()) {
         if (loading) CircularProgressIndicator(modifier = Modifier.padding(vertical = 12.dp))
         else if (items == null) TextButton(onClick = { UniverseRepository.prefetch(meta, refresh = true) }) {
-            Text(stringResource(Res.string.universe_retry))
+            Text(stringResource(Res.string.universe_retry), color = Color.White)
         }
         return
     }
-    Column {
-        if (showHeader) Text(stringResource(Res.string.universe_title), style = MaterialTheme.typography.titleLarge)
-        groups.forEach { (label, connections) ->
-            val cards = sortUniverse(connections, options.universeSortOrder).map { it.item }.withCustomPosterUrls(pattern)
-            val subtitles = connections.associate { it.item.id to (it.relations.joinToString(" · ") +
-                (it.item.status?.let { status -> " · $status" } ?: "")) }
-            DetailPosterRailSection(
-                title = label, items = cards, watchedKeys = watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys, showHeader = true,
-                horizontalScrollPadding = horizontalScrollPadding,
-                sourceLabel = "IMDb / TMDB · explicit connections; alternate continuities stay labelled",
-                itemSubtitle = { subtitles[it.id] },
-                relationshipAboveTitle = true,
-                landscapeOverride = options.universePosterStyle == UniversePosterStyle.Landscape,
-                waitForBackdrop = false, onPosterClick = onPosterClick,
-            )
-        }
-    }
+    val cards = sortUniverse(connections, options.universeSortOrder).map { it.item }.withCustomPosterUrls(pattern)
+    val subtitles = connections.associate { (it.item.type to it.item.id) to (it.relations.joinToString(" · ") +
+        (it.item.status?.let { status -> " · $status" } ?: "")) }
+    DetailPosterRailSection(
+        title = stringResource(Res.string.universe_title), items = cards, watchedKeys = watchedKeys,
+        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys, showHeader = showHeader,
+        horizontalScrollPadding = horizontalScrollPadding,
+        sourceLabel = "IMDb / TMDB · explicit connections; alternate continuities stay labelled",
+        itemSubtitle = { subtitles[it.type to it.id] },
+        relationshipAboveTitle = true,
+        landscapeOverride = options.universePosterStyle == UniversePosterStyle.Landscape,
+        waitForBackdrop = false, onPosterClick = onPosterClick,
+    )
 }

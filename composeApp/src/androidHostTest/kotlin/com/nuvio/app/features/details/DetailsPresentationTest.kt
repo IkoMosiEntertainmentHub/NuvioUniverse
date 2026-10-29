@@ -5,9 +5,17 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import com.nuvio.app.core.ui.NuvioTheme
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.features.details.components.DetailAdditionalInfoSection
+import com.nuvio.app.features.details.components.FinancialsSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.components.HomePosterCard
 import org.junit.Rule
@@ -47,7 +55,7 @@ class DetailsPresentationTest {
         assertTrue(title.top < year.top)
     }
 
-    @Test fun compactInformationUsesTwoColumnsAndFinancialsStartsCollapsed() {
+    @Test fun compactInformationUsesTwoColumnsAndBoxOfficeStartsCollapsed() {
         compose.setContent {
             NuvioTheme {
                 DetailAdditionalInfoSection(MetaDetails("tt1", "movie", "Movie", status = "Released", releaseInfo = "2026",
@@ -58,7 +66,52 @@ class DetailsPresentationTest {
         val year = compose.onNodeWithText("2026").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         assertTrue(year.left > status.left)
         assertTrue(abs(year.top - status.top) < 2f)
-        compose.onNodeWithText("Financials ▾").assertIsDisplayed()
+        compose.onNodeWithText("Box Office ▾").assertIsDisplayed()
         compose.onNodeWithText("Box office history").assertDoesNotExist()
+        assertWhiteText("Released")
+        assertWhiteText("2026")
+        assertWhiteText("Box Office ▾")
+    }
+
+    @Test fun expandedBoxOfficeUsesWhiteTextEvenWithLightMaterialDefaults() {
+        compose.setContent {
+            NuvioTheme {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    FinancialsSection(MetaDetails("tt1", "movie", "Movie"), loadFinancials = {
+                        Financials(budget = 100, worldwide = 250, source = "Reported figures", sourceUrl = "https://example.org",
+                            daily = listOf(GrossPoint("2020-01-01", 250, 250)))
+                    })
+                }
+            }
+        }
+        compose.onNodeWithText("Box Office ▾").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Production budget: $100").assertIsDisplayed()
+        assertWhiteText("Production budget: $100")
+        assertWhiteText("Worldwide gross: $250")
+        assertWhiteText("Box Office ▴")
+        compose.onNodeWithText("Financials ▾").assertDoesNotExist()
+        compose.onNodeWithText("Box office history").performClick()
+        compose.waitForIdle()
+        assertWhiteText("Daily domestic gross · maximum $250")
+    }
+
+    @Test fun normalDetailsStayWhiteEvenWithLightMaterialDefaults() {
+        MetaScreenSettingsRepository.setCompactDetails(false)
+        compose.setContent {
+            NuvioTheme {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    DetailAdditionalInfoSection(MetaDetails("tt1", "movie", "Movie", status = "Released", releaseInfo = "2026"))
+                }
+            }
+        }
+        assertWhiteText("Released")
+        assertWhiteText("2026")
+    }
+
+    private fun assertWhiteText(text: String) {
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText(text).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertEquals(Color.White, layouts.single().layoutInput.style.color)
     }
 }
