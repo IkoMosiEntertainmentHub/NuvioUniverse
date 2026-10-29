@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import com.nuvio.app.core.ui.NuvioTheme
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.features.details.components.DetailAdditionalInfoSection
@@ -39,7 +40,8 @@ class DetailsPresentationTest {
             }
         }
         val relation = compose.onNodeWithText("Spin-off").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
-        val title = compose.onNodeWithText("Card title").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        // The empty-artwork placeholder also contains the title; inspect the label below it.
+        val title = compose.onAllNodesWithText("Card title")[1].assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         val year = compose.onNodeWithText("2026").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         assertTrue(relation.top < title.top)
         assertTrue(title.top < year.top)
